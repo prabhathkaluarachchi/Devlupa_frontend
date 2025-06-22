@@ -1,11 +1,19 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Unauthorized from './pages/Unauthorized';
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminDashboard from './pages/AdminDashboard';
-import StudentDashboard from './pages/StudentDashboard';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Unauthorized from "./pages/Unauthorized";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
+
+// New pages:
+import Courses from "./pages/Courses"; // student courses page
+import AdminCourses from "./pages/AdminCourses"; // admin manage courses/videos
+import AdminAddCourse from "./pages/AdminAddCourse";
+import StudentCourses from "./pages/StudentCourses";
+import CourseDetail from "./pages/CourseDetail";
 
 const App: React.FC = () => {
   return (
@@ -15,7 +23,7 @@ const App: React.FC = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Admin protected route */}
+        {/* Admin protected routes */}
         <Route
           path="/admin"
           element={
@@ -24,8 +32,16 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/courses"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminCourses />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Student protected route */}
+        {/* Student protected routes */}
         <Route
           path="/dashboard"
           element={
@@ -34,10 +50,36 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/courses"
+          element={
+            <ProtectedRoute role="student">
+              <Courses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminAddCourse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/courses"
+          element={
+            <ProtectedRoute role="student">
+              <StudentCourses />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/courses/:courseId" element={<CourseDetail />} />
+
+
       </Routes>
     </BrowserRouter>
   );
 };
 
 export default App;
-
