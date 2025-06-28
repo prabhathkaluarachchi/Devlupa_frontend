@@ -7,12 +7,8 @@ import Unauthorized from "./pages/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
-
-// New pages:
-import Courses from "./pages/Courses"; // student courses page
-import AdminCourses from "./pages/AdminCourses"; // admin manage courses/videos
-import AdminAddCourse from "./pages/AdminAddCourse";
-import StudentCourses from "./pages/StudentCourses";
+import Courses from "./pages/Courses";
+import AdminCourses from "./pages/AdminCourses";
 import CourseDetail from "./pages/CourseDetail";
 
 const App: React.FC = () => {
@@ -58,25 +54,15 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
-          path="/admin/courses"
-          element={
-            <ProtectedRoute role="admin">
-              <AdminAddCourse />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/courses"
+          path="/courses/:courseId"
           element={
             <ProtectedRoute role="student">
-              <StudentCourses />
+              <CourseDetail />
             </ProtectedRoute>
           }
         />
-        <Route path="/courses/:courseId" element={<CourseDetail />} />
-
-
       </Routes>
     </BrowserRouter>
   );
