@@ -10,6 +10,8 @@ import StudentDashboard from "./pages/StudentDashboard";
 import Courses from "./pages/Courses";
 import AdminCourses from "./pages/AdminCourses";
 import CourseDetail from "./pages/CourseDetail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const App: React.FC = () => {
   return (
@@ -63,6 +65,8 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   );
