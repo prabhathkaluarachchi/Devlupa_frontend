@@ -1,8 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Unauthorized from "./pages/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -10,15 +8,15 @@ import StudentDashboard from "./pages/StudentDashboard";
 import Courses from "./pages/Courses";
 import AdminCourses from "./pages/AdminCourses";
 import CourseDetail from "./pages/CourseDetail";
-import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AuthPage from "./pages/AuthPage";
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Admin protected routes */}
@@ -65,7 +63,7 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/forgot-password" element={<AuthPage />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
