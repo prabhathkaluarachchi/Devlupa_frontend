@@ -129,7 +129,7 @@ const AdminDashboard: React.FC = () => {
 
           <div
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-            onClick={() => navigate("/admin-quizzes")}
+            onClick={() => navigate("/admin/quizzes")}
           >
             <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
               📝 Manage Quizzes

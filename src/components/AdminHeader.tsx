@@ -23,7 +23,7 @@ const AdminHeader: React.FC = () => {
       <nav className="hidden md:flex space-x-4">
         <Link to="/admin" className="text-gray-700 hover:text-[#4F46E5]">Dashboard</Link>
         <Link to="/admin/courses" className="text-gray-700 hover:text-[#4F46E5]">Courses</Link>
-        <Link to="/admin-quizzes" className="text-gray-700 hover:text-[#4F46E5]">Quizzes</Link>
+        <Link to="/admin/quizzes" className="text-gray-700 hover:text-[#4F46E5]">Quizzes</Link>
         <Link to="/admin-assignments" className="text-gray-700 hover:text-[#4F46E5]">Assignments</Link>
         <button onClick={handleLogout} className="ml-4 text-red-500 hover:underline">Logout</button>
       </nav>

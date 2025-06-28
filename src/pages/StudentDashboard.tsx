@@ -93,6 +93,7 @@ const StudentDashboard: React.FC = () => {
             </h2>
             <p className="text-gray-600">Take or review your quizzes.</p>
           </div>
+
           <div
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
             onClick={() => navigate("/student-assignments")}
