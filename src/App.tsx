@@ -1,21 +1,20 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Unauthorized from "./pages/Unauthorized";
+import Unauthorized from "./pages/common/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminDashboard from "./pages/AdminDashboard";
-import StudentDashboard from "./pages/StudentDashboard";
-import Courses from "./pages/Courses";
-import AdminCourses from "./pages/AdminCourses";
-import CourseDetail from "./pages/CourseDetail";
-import ResetPassword from "./pages/ResetPassword";
-import AuthPage from "./pages/AuthPage";
+import StudentDashboard from "./pages/student/StudentDashboard";
+import ResetPassword from "./pages/common/ResetPassword";
 import QuizList from "./pages/student/QuizList";
 import AttemptQuiz from "./pages/student/AttemptQuiz";
 import CreateQuiz from "./pages/admin/CreateQuiz";
-import AdminQuizList from "./pages/admin/AdminQuizList";
 import AdminQuizzes from "./pages/admin/AdminQuizzes";
-import StudentAllQuizzes from "./pages/StudentAllQuizzes";
+import AuthPage from "./pages/common/AuthPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminCourses from "./pages/admin/AdminCourses";
+import StudentAllQuizzes from "./pages/student/StudentAllQuizzes";
+import Courses from "./pages/student/Courses";
+import CourseDetail from "./pages/student/CourseDetail";
 
 const App: React.FC = () => {
   return (

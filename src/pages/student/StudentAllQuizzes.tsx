@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentHeader from "../components/StudentHeader";
-import StudentFooter from "../components/StudentFooter";
-import axios from "../utils/axiosInstance";
+import axios from "../../utils/axiosInstance";
+import StudentHeader from "../../components/StudentHeader";
+import StudentFooter from "../../components/StudentFooter";
 
 interface Quiz {
   _id: string;

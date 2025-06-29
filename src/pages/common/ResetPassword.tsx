@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "../utils/axiosInstance";
+import axios from "../../utils/axiosInstance";
 
 const ResetPassword: React.FC = () => {
   const { token } = useParams();

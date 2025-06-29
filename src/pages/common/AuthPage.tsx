@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../utils/axiosInstance";
-import logo from "../assets/logo.png"; // ✅ Ensure logo exists
+import axios from "../../utils/axiosInstance";
+import logo from "../../assets/logo.png"; 
 
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();

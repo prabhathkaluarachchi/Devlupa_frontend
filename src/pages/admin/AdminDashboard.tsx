@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import API from "../utils/axiosInstance";
-import AdminHeader from "../components/AdminHeader";
-import AdminFooter from "../components/AdminFooter";
+import API from "../../utils/axiosInstance";
+import AdminHeader from "../../components/AdminHeader";
+import AdminFooter from "../../components/AdminFooter";
 import { useNavigate } from "react-router-dom";
 
 interface CourseProgress {

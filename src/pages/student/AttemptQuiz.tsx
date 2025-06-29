@@ -195,7 +195,6 @@ const AttemptQuiz: React.FC = () => {
               {q.options.map((opt, idx) => {
                 const isSelected = answers[i] === idx;
                 const isCorrect = opt.isCorrect;
-                const correctIndex = q.options.findIndex((o) => o.isCorrect);
 
                 let borderColor = "border-gray-300";
                 let bgColor = "bg-white";

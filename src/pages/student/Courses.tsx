@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
-import StudentHeader from "../components/StudentHeader";
-import StudentFooter from "../components/StudentFooter";
+import axios from "../../utils/axiosInstance";
+import StudentHeader from "../../components/StudentHeader";
+import StudentFooter from "../../components/StudentFooter";
 
 interface Video {
   _id: string;

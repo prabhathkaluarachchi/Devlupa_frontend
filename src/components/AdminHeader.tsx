@@ -7,7 +7,7 @@ const AdminHeader: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/");
   };
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -71,7 +71,7 @@ const AdminHeader: React.FC = () => {
           <nav className="flex flex-col space-y-6 text-lg font-semibold text-gray-700">
             <Link to="/admin" onClick={closeMenu}>Dashboard</Link>
             <Link to="/admin/courses" onClick={closeMenu}>Courses</Link>
-            <Link to="/admin-quizzes" onClick={closeMenu}>Quizzes</Link>
+            <Link to="/admin/quizzes" onClick={closeMenu}>Quizzes</Link>
             <Link to="/admin-assignments" onClick={closeMenu}>Assignments</Link>
             <button
               onClick={() => {
