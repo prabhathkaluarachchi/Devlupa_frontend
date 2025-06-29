@@ -10,24 +10,42 @@ interface CourseProgress {
   percentage: number;
 }
 
+interface QuizProgress {
+  quizId: string;
+  quizTitle: string;
+  totalQuestions: number;
+  correctAnswers: number;
+}
+
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState<CourseProgress[]>([]);
+  const [quizProgress, setQuizProgress] = useState<QuizProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quizError, setQuizError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    axios
-      .get("/users/studentprogress")
-      .then((res) => {
-        setProgress(res.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load progress data");
-        setLoading(false);
-      });
+    const fetchProgress = async () => {
+      try {
+        const courseRes = await axios.get("/users/studentprogress");
+        setProgress(courseRes.data);
+      } catch {
+        setError("Failed to load course progress");
+      }
+
+      try {
+        const quizRes = await axios.get("/users/studentquizprogress");
+        const quizzes = Array.isArray(quizRes.data.quizzes) ? quizRes.data.quizzes : [];
+        setQuizProgress(quizzes);
+      } catch {
+        setQuizError("Failed to load quiz progress");
+      }
+
+      setLoading(false);
+    };
+
+    fetchProgress();
   }, []);
 
   if (loading) {
@@ -39,7 +57,6 @@ const StudentDashboard: React.FC = () => {
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            aria-label="Loading"
           >
             <circle
               className="opacity-25"
@@ -48,16 +65,14 @@ const StudentDashboard: React.FC = () => {
               r="10"
               stroke="currentColor"
               strokeWidth="4"
-            ></circle>
+            />
             <path
               className="opacity-75"
               fill="currentColor"
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            ></path>
+            />
           </svg>
-          <span className="text-[#4F46E5] text-lg font-semibold mt-4">
-            Loading dashboard...
-          </span>
+          <span className="mt-4 text-[#4F46E5] font-semibold">Loading dashboard...</span>
         </div>
       </div>
     );
@@ -67,9 +82,7 @@ const StudentDashboard: React.FC = () => {
     <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
       <StudentHeader />
       <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
-          Welcome to Your Dashboard 👋
-        </h1>
+        <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">Welcome to Your Dashboard 👋</h1>
 
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -77,40 +90,28 @@ const StudentDashboard: React.FC = () => {
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
             onClick={() => navigate("/courses")}
           >
-            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-              📚 My Courses
-            </h2>
-            <p className="text-gray-600">
-              View and continue your enrolled courses.
-            </p>
+            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📚 My Courses</h2>
+            <p className="text-gray-600">View and continue your enrolled courses.</p>
           </div>
           <div
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
             onClick={() => navigate("/student-quizzes")}
           >
-            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-              📝 My Quizzes
-            </h2>
+            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📝 My Quizzes</h2>
             <p className="text-gray-600">Take or review your quizzes.</p>
           </div>
-
           <div
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
             onClick={() => navigate("/student-assignments")}
           >
-            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-              📂 My Assignments
-            </h2>
+            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📂 My Assignments</h2>
             <p className="text-gray-600">Submit and track assignments.</p>
           </div>
         </div>
 
-        {/* Course Progress */}
+        {/* 📘 Course Progress */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
-            📊 Course Progress
-          </h2>
-
+          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📘 Course Progress</h2>
           {error ? (
             <p className="text-red-600">{error}</p>
           ) : progress.length === 0 ? (
@@ -120,34 +121,19 @@ const StudentDashboard: React.FC = () => {
               {progress.map(({ courseId, courseTitle, percentage }) => (
                 <div
                   key={courseId}
-                  className="bg-white rounded-2xl shadow p-5 hover:shadow-lg transition-all cursor-pointer"
+                  className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
                   onClick={() => navigate(`/courses/${courseId}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      navigate(`/courses/${courseId}`);
-                    }
-                  }}
-                  aria-label={`Go to course ${courseTitle}`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-bold text-[#4F46E5]">
-                      {courseTitle}
-                    </h3>
-                    <span className="text-sm text-gray-500">{percentage}%</span>
+                  <h3 className="text-lg font-bold text-[#4F46E5] mb-1">{courseTitle}</h3>
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Completion</span>
+                    <span>{percentage}%</span>
                   </div>
-                  <div
-                    className="h-3 bg-gray-200 rounded-full overflow-hidden"
-                    role="progressbar"
-                    aria-valuenow={percentage}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  >
+                  <div className="h-3 bg-gray-200 rounded-full">
                     <div
-                      className="bg-[#4F46E5] h-full rounded-full transition-all"
+                      className="bg-[#4F46E5] h-full rounded-full"
                       style={{ width: `${percentage}%` }}
-                    />
+                    ></div>
                   </div>
                 </div>
               ))}
@@ -155,11 +141,49 @@ const StudentDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Optional: Recent Activity */}
+        {/* 📝 Quiz Progress */}
+        <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📝 Quiz Progress</h2>
+          {quizError ? (
+            <p className="text-red-600">{quizError}</p>
+          ) : quizProgress.length === 0 ? (
+            <p className="text-gray-600">No quiz progress available.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {quizProgress.map(({ quizId, quizTitle, correctAnswers, totalQuestions }) => {
+                const completionPercentage =
+                  totalQuestions > 0
+                    ? Math.round((correctAnswers / totalQuestions) * 100)
+                    : 0;
+
+                return (
+                  <div
+                    key={quizId}
+                    className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
+                    onClick={() => navigate(`/student/quizzes/${quizId}`)}
+
+                  >
+                    <h3 className="text-lg font-bold text-[#4F46E5] mb-1">{quizTitle}</h3>
+                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                      <span>Completion</span>
+                      <span>{completionPercentage}%</span>
+                    </div>
+                    <div className="h-3 bg-gray-200 rounded-full">
+                      <div
+                        className="bg-[#4F46E5] h-full rounded-full"
+                        style={{ width: `${completionPercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* 🕓 Recent Activity */}
         <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
-            🕓 Recent Activity
-          </h2>
+          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">🕓 Recent Activity</h2>
           <ul className="list-disc pl-5 text-gray-700 space-y-1">
             <li>Watched “Intro to React” – 2 days ago</li>
             <li>Submitted Assignment 1 for Web Dev – 3 days ago</li>

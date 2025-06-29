@@ -115,6 +115,7 @@ const App: React.FC = () => {
 
         <Route path="/forgot-password" element={<AuthPage />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        
       </Routes>
     </BrowserRouter>
   );

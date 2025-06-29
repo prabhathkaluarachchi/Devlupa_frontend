@@ -32,15 +32,27 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserProgress | null>(null);
+  const [quizProgressMap, setQuizProgressMap] = useState<Map<string, any>>(
+    new Map()
+  );
 
   useEffect(() => {
     Promise.all([
-      API.get("/admin/users-progress"),
+      API.get("/admin/users-progress"), // existing course progress
       API.get("/admin/dashboard-summary"),
+      API.get("/admin/users-quiz-progress"), // new quiz progress data
     ])
-      .then(([progressRes, summaryRes]) => {
+      .then(([progressRes, summaryRes, quizProgressRes]) => {
         setUserProgressList(progressRes.data);
         setSummary(summaryRes.data);
+
+        // Map quiz progress by userId for quick lookup
+        const quizProgressMap = new Map();
+        quizProgressRes.data.forEach((qp: any) => {
+          quizProgressMap.set(qp.userId, qp);
+        });
+        setQuizProgressMap(quizProgressMap);
+
         setLoading(false);
       })
       .catch((err) => {
@@ -81,7 +93,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
     );
-    
+
   if (error) return <div className="p-6 text-red-600 text-center">{error}</div>;
 
   return (
@@ -213,44 +225,104 @@ const AdminDashboard: React.FC = () => {
               </button>
             </div>
 
-            {selectedUser.progress.length === 0 ? (
-              <p className="text-gray-500">No course progress yet.</p>
-            ) : (
-              <div className="space-y-6">
-                {selectedUser.progress.map(
-                  ({ courseId, courseTitle, percentage }) => (
-                    <div key={courseId}>
-                      <p className="font-medium text-[#374151] text-lg">
-                        📘 {courseTitle}
-                      </p>
-                      <p className="text-sm text-[#6B7280] mb-1">
-                        Completion: {percentage}%
-                      </p>
-                      <progress
-                        className="w-full h-4 rounded bg-gray-200"
-                        value={percentage}
-                        max={100}
-                        aria-label={`${courseTitle} progress`}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={percentage}
-                      />
-                    </div>
-                  )
-                )}
-              </div>
-            )}
+            {/* 📘 Course Progress */}
+            <div className="mb-10">
+              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
+                📘 Course Progress
+              </h3>
 
-            {/* Placeholder for future features */}
-            <div className="mt-8">
-              <h3 className="text-xl font-semibold mb-3">📝 Quiz Progress</h3>
-              <p className="italic text-gray-500">
-                Coming soon – quiz tracking logic here...
-              </p>
+              {selectedUser.progress.length === 0 ? (
+                <p className="text-gray-500">No course progress yet.</p>
+              ) : (
+                <div className="space-y-6">
+                  {selectedUser.progress.map(
+                    ({ courseId, courseTitle, percentage }) => (
+                      <div key={courseId}>
+                        <p className="font-medium text-[#374151] text-lg">
+                          {courseTitle}
+                        </p>
+                        <p className="text-sm text-[#6B7280] mb-1">
+                          Completion: {percentage}%
+                        </p>
+                        <progress
+                          className="w-full h-4 rounded bg-gray-200"
+                          value={percentage}
+                          max={100}
+                          aria-label={`${courseTitle} progress`}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={percentage}
+                        />
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="mt-8">
-              <h3 className="text-xl font-semibold mb-3">
+{/* 📝 Quiz Progress */}
+<div className="mb-10">
+  <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
+    📝 Quiz Progress
+  </h3>
+
+  {selectedUser &&
+  quizProgressMap.has(selectedUser._id) &&
+  quizProgressMap.get(selectedUser._id).quizzes.length > 0 ? (
+    <div className="space-y-4">
+      {quizProgressMap.get(selectedUser._id).quizzes.map(
+        (
+          quiz: {
+            quizTitle: string;
+            totalQuestions: number;
+            correctAnswers: number;
+            scorePercentage: number;
+          },
+          index: number
+        ) => (
+          <div
+            key={index}
+            className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+          >
+            <h4 className="text-lg font-semibold text-[#1F2937] mb-1">
+              {quiz.quizTitle}
+            </h4>
+            <p className="text-sm text-gray-600 mb-2">
+              Correct:{" "}
+              <span className="font-medium text-[#4F46E5]">
+                {quiz.correctAnswers}
+              </span>{" "}
+              / {quiz.totalQuestions} (
+              <span className="font-medium">{quiz.scorePercentage}%</span>)
+            </p>
+
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="h-3 rounded-full"
+                style={{
+                  width: `${quiz.scorePercentage}%`,
+                  backgroundColor:
+                    quiz.scorePercentage >= 80
+                      ? "#16a34a" // green
+                      : quiz.scorePercentage >= 50
+                      ? "#facc15" // yellow
+                      : "#ef4444", // red
+                }}
+              ></div>
+            </div>
+          </div>
+        )
+      )}
+    </div>
+  ) : (
+    <p className="italic text-gray-500">No quiz progress available.</p>
+  )}
+</div>
+
+
+            {/* 📂 Assignment Progress (placeholder) */}
+            <div className="mb-2">
+              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
                 📂 Assignment Progress
               </h3>
               <p className="italic text-gray-500">
