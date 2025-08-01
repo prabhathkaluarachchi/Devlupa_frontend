@@ -28,7 +28,7 @@ const AdminQuizList: React.FC = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Quizzes for Course</h1>
+      <h1 className="text-2xl font-bold mb-6">Quizzes for Course</h1>
       {quizzes.length === 0 ? (
         <p>No quizzes created yet for this course.</p>
       ) : (
@@ -36,11 +36,22 @@ const AdminQuizList: React.FC = () => {
           {quizzes.map((quiz) => (
             <li
               key={quiz._id}
-              className="border p-4 rounded shadow hover:bg-gray-50 cursor-pointer"
               onClick={() => navigate(`/admin/quizzes/${quiz._id}`)}
+              className="
+                bg-gradient-to-r from-blue-500 to-cyan-500
+                hover:opacity-90
+                text-white
+                font-semibold
+                px-6 py-3
+                rounded-2xl
+                shadow
+                cursor-pointer
+                transition
+                select-none
+              "
             >
-              <h2 className="text-lg font-semibold">{quiz.title}</h2>
-              <p>Time Limit: {quiz.timeLimit} mins</p>
+              <h2 className="text-lg">{quiz.title}</h2>
+              <p className="text-sm">Time Limit: {quiz.timeLimit} mins</p>
             </li>
           ))}
         </ul>

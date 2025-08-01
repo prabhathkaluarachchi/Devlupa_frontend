@@ -8,7 +8,7 @@ interface Course {
 }
 
 interface Question {
-  question: string; // renamed from questionText to question to match backend
+  question: string;
   options: { text: string; isCorrect: boolean }[];
 }
 
@@ -17,7 +17,7 @@ const CreateQuiz: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [title, setTitle] = useState("");
-  const [timeLimit, setTimeLimit] = useState<number>(30); // in minutes
+  const [timeLimit, setTimeLimit] = useState<number>(30);
   const [questions, setQuestions] = useState<Question[]>(
     Array.from({ length: 2 }, () => ({
       question: "",
@@ -27,11 +27,9 @@ const CreateQuiz: React.FC = () => {
       })),
     }))
   );
-
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch course list for dropdown
     const fetchCourses = async () => {
       try {
         const res = await axios.get("/courses");
@@ -73,7 +71,6 @@ const CreateQuiz: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Basic validation including check for one correct option per question
     if (
       !selectedCourse ||
       !title ||
@@ -81,7 +78,7 @@ const CreateQuiz: React.FC = () => {
         (q) =>
           q.question.trim() === "" ||
           q.options.some((o) => o.text.trim() === "") ||
-          !q.options.some((o) => o.isCorrect) // Ensure at least one correct option per question
+          !q.options.some((o) => o.isCorrect)
       )
     ) {
       alert(
@@ -110,13 +107,13 @@ const CreateQuiz: React.FC = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Create New Quiz</h1>
+      <h1 className="text-3xl font-bold mb-6">Create New Quiz</h1>
 
       <label className="block mb-2 font-medium">Select Course:</label>
       <select
         value={selectedCourse}
         onChange={(e) => setSelectedCourse(e.target.value)}
-        className="mb-4 p-2 border rounded w-full"
+        className="border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent p-3 rounded-lg w-full mb-4 transition"
       >
         <option value="">-- Select a Course --</option>
         {courses.map((c) => (
@@ -131,32 +128,34 @@ const CreateQuiz: React.FC = () => {
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="mb-4 p-2 border rounded w-full"
+        className="border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent p-3 rounded-lg w-full mb-4 transition"
       />
 
-      <label className="block mb-2 font-medium">Time Limit (in minutes):</label>
+      <label className="block mb-2 font-medium">Time Limit (minutes):</label>
       <input
         type="number"
         value={timeLimit}
         onChange={(e) => setTimeLimit(Number(e.target.value))}
-        className="mb-6 p-2 border rounded w-full"
+        className="border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent p-3 rounded-lg w-full mb-6 transition"
       />
 
       <h2 className="text-xl font-semibold mb-4">Add 2 Questions:</h2>
       {questions.map((q, i) => (
-        <div key={i} className="mb-8 border p-4 rounded">
-          <label className="block font-medium mb-1">Question {i + 1}</label>
+        <div
+          key={i}
+          className="mb-8 border p-4 rounded-2xl shadow-sm bg-gray-50"
+        >
+          <label className="block font-medium mb-2">Question {i + 1}</label>
           <input
             type="text"
             value={q.question}
-            onChange={(e) =>
-              handleQuestionChange(i, "question", e.target.value)
-            }
-            className="mb-3 p-2 border rounded w-full"
+            onChange={(e) => handleQuestionChange(i, "question", e.target.value)}
+            className="border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent p-3 rounded-lg w-full mb-4 transition"
+            placeholder="Enter the question"
           />
 
           {q.options.map((opt, j) => (
-            <div key={j} className="mb-2 flex items-center gap-2">
+            <div key={j} className="mb-3 flex items-center gap-2">
               <input
                 type="radio"
                 name={`correct-${i}`}
@@ -167,7 +166,7 @@ const CreateQuiz: React.FC = () => {
                 type="text"
                 value={opt.text}
                 onChange={(e) => handleOptionChange(i, j, e.target.value)}
-                className="p-2 border rounded w-full"
+                className="border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent p-3 rounded-lg w-full transition"
                 placeholder={`Option ${j + 1}`}
               />
             </div>
@@ -178,7 +177,7 @@ const CreateQuiz: React.FC = () => {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition"
       >
         {loading ? "Creating..." : "Create Quiz"}
       </button>

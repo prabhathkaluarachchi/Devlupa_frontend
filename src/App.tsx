@@ -61,7 +61,7 @@ const App: React.FC = () => {
 
         {/* Student protected routes */}
         <Route
-          path="/student-quizzes"
+          path="/quizzes"
           element={
             <ProtectedRoute role="student">
               <StudentAllQuizzes />

@@ -157,7 +157,7 @@ const AdminCourses: React.FC = () => {
           />
           <button
             onClick={addCourse}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-2xl shadow transition"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition"
           >
             Add Course
           </button>
@@ -218,7 +218,7 @@ const AdminCourses: React.FC = () => {
                   </div>
                   <button
                     onClick={addVideo}
-                    className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-2xl shadow transition"
+                    className="mt-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-2xl shadow transition"
                   >
                     Add Video
                   </button>

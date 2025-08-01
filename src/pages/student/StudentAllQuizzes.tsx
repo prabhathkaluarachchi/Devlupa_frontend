@@ -22,7 +22,7 @@ const StudentAllQuizzes: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get("/quizzes") // Your backend endpoint to get all quizzes
+      .get("/quizzes")
       .then((res) => {
         setQuizzes(res.data);
         setLoading(false);
@@ -33,7 +33,7 @@ const StudentAllQuizzes: React.FC = () => {
       });
   }, []);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
         <div className="flex flex-col items-center">
@@ -64,6 +64,7 @@ const StudentAllQuizzes: React.FC = () => {
         </div>
       </div>
     );
+  }
 
   return (
     <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
@@ -83,21 +84,23 @@ const StudentAllQuizzes: React.FC = () => {
             {quizzes.map((quiz) => (
               <div
                 key={quiz._id}
-                className="bg-white rounded-2xl shadow-md p-6 flex flex-col"
+                className="bg-white rounded-2xl shadow-md p-6 flex flex-col hover:bg-[#EEF2FF] transition"
               >
                 <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
                   {quiz.title}
                 </h2>
-                <p className="text-gray-700 mb-4">
-                  Course: {quiz.course ? quiz.course.title : "Course Deleted"}
+                <p className="text-gray-700 mb-2">
+                  <span className="font-medium text-gray-800">Course:</span>{" "}
+                  {quiz.course ? quiz.course.title : "Course Deleted"}
                 </p>
                 <p className="text-gray-600 mb-6">
-                  Time Limit: {quiz.timeLimit} minutes
+                  <span className="font-medium text-gray-800">Time Limit:</span>{" "}
+                  {quiz.timeLimit} minutes
                 </p>
 
                 <button
                   onClick={() => navigate(`/student/quizzes/${quiz._id}`)}
-                  className="mt-auto bg-[#4F46E5] text-white py-2 rounded-lg hover:bg-[#4338CA] transition"
+                  className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
                 >
                   Start Quiz
                 </button>

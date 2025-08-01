@@ -44,7 +44,7 @@ const AttemptQuiz: React.FC = () => {
           setScore(statusRes.data.score);
           setAnswers(
             Array.isArray(statusRes.data.answers) &&
-            statusRes.data.answers.length === data.questions.length
+              statusRes.data.answers.length === data.questions.length
               ? statusRes.data.answers
               : Array(data.questions.length).fill(-1)
           );
@@ -86,7 +86,6 @@ const AttemptQuiz: React.FC = () => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (timeLeft === 0 && !timeExpired) {
-      // Timer just reached zero
       setTimeExpired(true);
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -109,6 +108,7 @@ const AttemptQuiz: React.FC = () => {
         handleSubmit();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeExpired]);
 
   const handleChange = (questionIndex: number, selectedIndex: number) => {
@@ -148,16 +148,24 @@ const AttemptQuiz: React.FC = () => {
     return `${m}:${s}`;
   };
 
-  if (loading) return <div className="p-6">Loading quiz...</div>;
-  if (!quiz) return <div className="p-6">Quiz not found.</div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
+        <div className="text-[#4F46E5] text-lg font-semibold">Loading quiz...</div>
+      </div>
+    );
+  if (!quiz)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
+        <div className="text-red-600 text-lg font-semibold">Quiz not found.</div>
+      </div>
+    );
 
   return (
     <>
       <StudentHeader />
       <div className="min-h-screen px-4 py-6 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center text-[#4F46E5]">
-          {quiz.title}
-        </h1>
+        <h1 className="text-3xl font-bold mb-6 text-center text-[#4F46E5]">{quiz.title}</h1>
 
         {score === null && (
           <div className="mb-8 text-center">
@@ -171,11 +179,19 @@ const AttemptQuiz: React.FC = () => {
                     ? "bg-yellow-100 text-yellow-800"
                     : "bg-red-100 text-red-800 animate-pulse"
                 }`}
+                aria-live="polite"
+                aria-atomic="true"
+                role="timer"
               >
                 ⏱ Time Left: {formatTime(timeLeft)}
               </span>
             ) : (
-              <span className="inline-block text-xl font-bold px-5 py-2 rounded-full shadow bg-red-600 text-white animate-pulse">
+              <span
+                className="inline-block text-xl font-bold px-5 py-2 rounded-full shadow bg-red-600 text-white animate-pulse"
+                aria-live="polite"
+                aria-atomic="true"
+                role="alert"
+              >
                 ⏰ Time's up!
               </span>
             )}
@@ -191,7 +207,7 @@ const AttemptQuiz: React.FC = () => {
               {i + 1}. {q.question}
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {q.options.map((opt, idx) => {
                 const isSelected = answers[i] === idx;
                 const isCorrect = opt.isCorrect;
@@ -222,22 +238,25 @@ const AttemptQuiz: React.FC = () => {
                 return (
                   <label
                     key={idx}
+                    htmlFor={`question-${i}-option-${idx}`}
                     className={`flex items-center p-3 rounded-lg border ${borderColor} ${bgColor} cursor-pointer transition-all`}
                   >
                     <input
                       type="radio"
+                      id={`question-${i}-option-${idx}`}
                       name={`question-${i}`}
                       value={idx}
                       checked={isSelected}
                       onChange={() => handleChange(i, idx)}
                       disabled={score !== null || timeExpired}
-                      className="mr-3"
+                      className="mr-3 cursor-pointer"
+                      aria-checked={isSelected}
                     />
-                    <span className="text-sm sm:text-base flex-1">
-                      {opt.text}
-                    </span>
+                    <span className="text-sm sm:text-base flex-1">{opt.text}</span>
                     {score !== null && icon && (
-                      <span className="ml-2 text-lg">{icon}</span>
+                      <span className="ml-2 text-lg" aria-hidden="true">
+                        {icon}
+                      </span>
                     )}
                   </label>
                 );
@@ -254,8 +273,9 @@ const AttemptQuiz: React.FC = () => {
               ${
                 answers.includes(-1) || timeExpired
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90"
               }`}
+            aria-disabled={answers.includes(-1) || timeExpired}
           >
             Submit Quiz
           </button>

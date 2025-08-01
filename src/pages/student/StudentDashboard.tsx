@@ -48,6 +48,12 @@ const StudentDashboard: React.FC = () => {
     fetchProgress();
   }, []);
 
+  const getColor = (percentage: number) => {
+    if (percentage >= 80) return "#16a34a"; // green
+    if (percentage >= 50) return "#facc15"; // yellow
+    return "#ef4444"; // red
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
@@ -95,14 +101,14 @@ const StudentDashboard: React.FC = () => {
           </div>
           <div
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-            onClick={() => navigate("/student-quizzes")}
+            onClick={() => navigate("/quizzes")}
           >
             <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📝 My Quizzes</h2>
             <p className="text-gray-600">Take or review your quizzes.</p>
           </div>
           <div
             className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-            onClick={() => navigate("/student-assignments")}
+            onClick={() => navigate("/assignments")}
           >
             <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📂 My Assignments</h2>
             <p className="text-gray-600">Submit and track assignments.</p>
@@ -129,11 +135,14 @@ const StudentDashboard: React.FC = () => {
                     <span>Completion</span>
                     <span>{percentage}%</span>
                   </div>
-                  <div className="h-3 bg-gray-200 rounded-full">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
-                      className="bg-[#4F46E5] h-full rounded-full"
-                      style={{ width: `${percentage}%` }}
-                    ></div>
+                      className="h-3 rounded-full"
+                      style={{
+                        width: `${percentage}%`,
+                        backgroundColor: getColor(percentage),
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -161,18 +170,20 @@ const StudentDashboard: React.FC = () => {
                     key={quizId}
                     className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
                     onClick={() => navigate(`/student/quizzes/${quizId}`)}
-
                   >
                     <h3 className="text-lg font-bold text-[#4F46E5] mb-1">{quizTitle}</h3>
                     <div className="flex justify-between text-sm text-gray-600 mb-1">
                       <span>Completion</span>
                       <span>{completionPercentage}%</span>
                     </div>
-                    <div className="h-3 bg-gray-200 rounded-full">
+                    <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
-                        className="bg-[#4F46E5] h-full rounded-full"
-                        style={{ width: `${completionPercentage}%` }}
-                      ></div>
+                        className="h-3 rounded-full"
+                        style={{
+                          width: `${completionPercentage}%`,
+                          backgroundColor: getColor(completionPercentage),
+                        }}
+                      />
                     </div>
                   </div>
                 );

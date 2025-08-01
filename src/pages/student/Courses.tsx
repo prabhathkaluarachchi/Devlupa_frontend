@@ -104,9 +104,11 @@ const CoursesPage: React.FC = () => {
               return (
                 <div
                   key={course._id}
-                  className="bg-white rounded-2xl shadow-md p-6 flex flex-col"
+                  className="bg-white rounded-2xl shadow-md p-6 flex flex-col hover:bg-[#EEF2FF] transition"
                 >
-                  <h2 className="text-xl font-semibold text-[#1F2937] mb-3">{course.title}</h2>
+                  <h2 className="text-xl font-semibold text-[#1F2937] mb-3">
+                    {course.title}
+                  </h2>
                   <p className="mb-4 text-gray-700 flex-grow">{course.description}</p>
 
                   {embedUrl && (
@@ -116,13 +118,14 @@ const CoursesPage: React.FC = () => {
                         title={course.title}
                         className="w-full h-full"
                         allowFullScreen
+                        loading="lazy"
                       />
                     </div>
                   )}
 
                   <button
                     onClick={() => navigate(`/courses/${course._id}`)}
-                    className="mt-auto bg-[#4F46E5] text-white py-2 rounded-lg hover:bg-[#4338CA] transition"
+                    className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
                   >
                     Start Course
                   </button>

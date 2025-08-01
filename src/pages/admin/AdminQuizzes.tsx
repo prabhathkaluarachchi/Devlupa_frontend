@@ -1,4 +1,3 @@
-// src/pages/admin/AdminQuizzes.tsx
 import React, { useEffect, useState } from "react";
 import API from "../../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
@@ -38,9 +37,9 @@ const AdminQuizzes: React.FC = () => {
   }, []);
 
   const handleDeleteQuiz = async (quizId: string, courseId: string) => {
-    if (!window.confirm("Are you sure to delete this quiz?")) return;
+    if (!window.confirm("Are you sure you want to delete this quiz?")) return;
     try {
-      await API.delete(`/quizzes/${quizId}`); // If delete route exists
+      await API.delete(`/quizzes/${quizId}`);
       await fetchQuizzesForCourse(courseId);
     } catch {
       alert("Failed to delete quiz");
@@ -53,12 +52,12 @@ const AdminQuizzes: React.FC = () => {
 
       <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
         <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
-          Admin: Manage Quizzes by Course 
+          Admin: Manage Quizzes by Course
         </h1>
 
         <button
           onClick={() => navigate("/admin/quizzes/create")}
-          className="mb-6 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-2xl shadow"
+          className="mb-6 bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition"
         >
           + Create New Quiz
         </button>
@@ -84,26 +83,32 @@ const AdminQuizzes: React.FC = () => {
 
             {selectedCourseId === course._id && (
               <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Quizzes</h3>
-                <ul className="space-y-2">
-                  {quizzes[course._id]?.length === 0 && (
-                    <p className="text-gray-500 italic">No quizzes yet.</p>
-                  )}
-                  {quizzes[course._id]?.map((quiz) => (
-                    <li
-                      key={quiz._id}
-                      className="flex justify-between items-center border p-3 rounded-xl"
-                    >
-                      <span>{quiz.title} (Time Limit: {quiz.timeLimit} mins)</span>
-                      <button
-                        onClick={() => handleDeleteQuiz(quiz._id, course._id)}
-                        className="text-red-600 hover:text-red-800 font-medium text-sm"
+                <h3 className="text-lg font-semibold mb-2 text-[#374151]">Quizzes</h3>
+                {quizzes[course._id]?.length === 0 ? (
+                  <p className="text-gray-500 italic">No quizzes yet.</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {quizzes[course._id]?.map((quiz) => (
+                      <li
+                        key={quiz._id}
+                        className="flex justify-between items-center bg-gray-50 border border-gray-200 p-4 rounded-xl hover:shadow"
                       >
-                        Delete
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        <span className="text-gray-800 font-medium">
+                          {quiz.title}{" "}
+                          <span className="text-sm text-gray-500">
+                            (Time Limit: {quiz.timeLimit} mins)
+                          </span>
+                        </span>
+                        <button
+                          onClick={() => handleDeleteQuiz(quiz._id, course._id)}
+                          className="text-red-600 hover:text-red-700 text-sm font-semibold transition"
+                        >
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>

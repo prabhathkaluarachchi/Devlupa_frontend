@@ -37,9 +37,7 @@ const CourseDetail: React.FC = () => {
     const listId = listMatch?.[1];
 
     return videoId
-      ? `https://www.youtube.com/embed/${videoId}${
-          listId ? `?list=${listId}` : ""
-        }`
+      ? `https://www.youtube.com/embed/${videoId}${listId ? `?list=${listId}` : ""}`
       : url;
   };
 
@@ -126,6 +124,7 @@ const CourseDetail: React.FC = () => {
         {error}
       </div>
     );
+
   if (!course)
     return (
       <div className="p-6 text-gray-600 text-center min-h-screen flex items-center justify-center">
@@ -138,15 +137,11 @@ const CourseDetail: React.FC = () => {
       <StudentHeader />
 
       <main className="flex-grow max-w-7xl mx-auto w-full p-6">
-        <h1 className="text-4xl font-bold text-[#4F46E5] mb-4">
-          {course.title}
-        </h1>
+        <h1 className="text-4xl font-bold text-[#4F46E5] mb-4">{course.title}</h1>
         <p className="mb-8 text-gray-700 max-w-3xl">{course.description}</p>
 
         <div className="mb-8 max-w-md">
-          <p className="font-medium text-[#1F2937] mb-2">
-            Progress: {progress}%
-          </p>
+          <p className="font-medium text-[#1F2937] mb-2">Progress: {progress}%</p>
           <progress
             className="w-full h-3 rounded bg-gray-200"
             value={progress}
@@ -172,8 +167,9 @@ const CourseDetail: React.FC = () => {
                   <iframe
                     src={embedUrl}
                     title={video.title}
-                    className="w-full h-full it"
+                    className="w-full h-full"
                     allowFullScreen
+                    loading="lazy"
                   />
                 </div>
               ) : (
@@ -183,14 +179,16 @@ const CourseDetail: React.FC = () => {
               {watchedVideoIds.includes(video._id) ? (
                 <button
                   disabled
-                  className="bg-green-500 text-white px-5 py-2 rounded-lg cursor-not-allowed"
+                  aria-label={`Video titled ${video.title} is watched`}
+                  className="bg-green-500 text-white px-5 py-2 rounded-lg cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1"
                 >
                   ✅ Watched
                 </button>
               ) : (
                 <button
                   onClick={() => handleMarkAsWatched(video._id)}
-                  className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-5 py-2 rounded-lg transition"
+                  aria-label={`Mark video titled ${video.title} as watched`}
+                  className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-5 py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-1"
                 >
                   Mark as Watched
                 </button>
