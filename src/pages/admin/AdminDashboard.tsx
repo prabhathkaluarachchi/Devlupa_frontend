@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../utils/axiosInstance";
-import AdminSidebar from "../../components/AdminSidebar"; // ✅ use sidebar
+import AdminSidebar from "../../components/AdminSidebar";
 import AdminFooter from "../../components/AdminFooter";
 import { useNavigate } from "react-router-dom";
 

@@ -19,6 +19,7 @@ import Test from "./pages/common/Test";
 import AdminAssignments from "./pages/admin/AdminAssignments";
 import AttemptAssignment from "./pages/student/AttemptAssignment";
 import AssignmentList from "./pages/student/AssignmentList";
+import AdminManageUsers from "./pages/admin/AdminManageUsers";
 
 const App: React.FC = () => {
   return (
@@ -68,6 +69,15 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute role="admin">
               <AdminAssignments />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminManageUsers />
             </ProtectedRoute>
           }
         />
