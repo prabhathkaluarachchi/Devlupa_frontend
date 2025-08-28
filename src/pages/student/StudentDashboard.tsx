@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentHeader from "../../components/StudentHeader";
-import StudentFooter from "../../components/StudentFooter";
 import axios from "../../utils/axiosInstance";
+import StudentFooter from "../../components/StudentFooter";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface CourseProgress {
   courseId: string;
@@ -85,124 +85,137 @@ const StudentDashboard: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
-      <StudentHeader />
-      <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
-        <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">Welcome to Your Dashboard 👋</h1>
+    <div className="flex bg-[#F9FAFB] min-h-screen">
+      {/* Sidebar */}
+      <StudentSidebar />
 
-        {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div
-            className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-            onClick={() => navigate("/courses")}
-          >
-            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📚 My Courses</h2>
-            <p className="text-gray-600">View and continue your enrolled courses.</p>
-          </div>
-          <div
-            className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-            onClick={() => navigate("/quizzes")}
-          >
-            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📝 My Quizzes</h2>
-            <p className="text-gray-600">Take or review your quizzes.</p>
-          </div>
-          <div
-            className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-            onClick={() => navigate("/assignments")}
-          >
-            <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📂 My Assignments</h2>
-            <p className="text-gray-600">Submit and track assignments.</p>
-          </div>
-        </div>
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
+        <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
+          <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
+            Welcome to Your Dashboard 👋
+          </h1>
 
-        {/* 📘 Course Progress */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📘 Course Progress</h2>
-          {error ? (
-            <p className="text-red-600">{error}</p>
-          ) : progress.length === 0 ? (
-            <p className="text-gray-600">No course progress yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {progress.map(({ courseId, courseTitle, percentage }) => (
-                <div
-                  key={courseId}
-                  className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
-                  onClick={() => navigate(`/courses/${courseId}`)}
-                >
-                  <h3 className="text-lg font-bold text-[#4F46E5] mb-1">{courseTitle}</h3>
-                  <div className="flex justify-between text-sm text-gray-600 mb-1">
-                    <span>Completion</span>
-                    <span>{percentage}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="h-3 rounded-full"
-                      style={{
-                        width: `${percentage}%`,
-                        backgroundColor: getColor(percentage),
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+          {/* Quick Links */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div
+              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
+              onClick={() => navigate("/courses")}
+            >
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📚 My Courses</h2>
+              <p className="text-gray-600">View and continue your enrolled courses.</p>
             </div>
-          )}
-        </div>
+            <div
+              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
+              onClick={() => navigate("/quizzes")}
+            >
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📝 My Quizzes</h2>
+              <p className="text-gray-600">Take or review your quizzes.</p>
+            </div>
+            <div
+              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
+              onClick={() => navigate("/assignments")}
+            >
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📂 My Assignments</h2>
+              <p className="text-gray-600">Submit and track assignments.</p>
+            </div>
+          </div>
 
-        {/* 📝 Quiz Progress */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📝 Quiz Progress</h2>
-          {quizError ? (
-            <p className="text-red-600">{quizError}</p>
-          ) : quizProgress.length === 0 ? (
-            <p className="text-gray-600">No quiz progress available.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quizProgress.map(({ quizId, quizTitle, correctAnswers, totalQuestions }) => {
-                const completionPercentage =
-                  totalQuestions > 0
-                    ? Math.round((correctAnswers / totalQuestions) * 100)
-                    : 0;
-
-                return (
+          {/* 📘 Course Progress */}
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📘 Course Progress</h2>
+            {error ? (
+              <p className="text-red-600">{error}</p>
+            ) : progress.length === 0 ? (
+              <p className="text-gray-600">No course progress yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {progress.map(({ courseId, courseTitle, percentage }) => (
                   <div
-                    key={quizId}
+                    key={courseId}
                     className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
-                    onClick={() => navigate(`/student/quizzes/${quizId}`)}
+                    onClick={() => navigate(`/courses/${courseId}`)}
                   >
-                    <h3 className="text-lg font-bold text-[#4F46E5] mb-1">{quizTitle}</h3>
+                    <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
+                      {courseTitle}
+                    </h3>
                     <div className="flex justify-between text-sm text-gray-600 mb-1">
                       <span>Completion</span>
-                      <span>{completionPercentage}%</span>
+                      <span>{percentage}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
                         className="h-3 rounded-full"
                         style={{
-                          width: `${completionPercentage}%`,
-                          backgroundColor: getColor(completionPercentage),
+                          width: `${percentage}%`,
+                          backgroundColor: getColor(percentage),
                         }}
                       />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* 🕓 Recent Activity */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">🕓 Recent Activity</h2>
-          <ul className="list-disc pl-5 text-gray-700 space-y-1">
-            <li>Watched “Intro to React” – 2 days ago</li>
-            <li>Submitted Assignment 1 for Web Dev – 3 days ago</li>
-            <li>Scored 8/10 in HTML Quiz – 5 days ago</li>
-          </ul>
-        </div>
-      </main>
-      <StudentFooter />
+          {/* 📝 Quiz Progress */}
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📝 Quiz Progress</h2>
+            {quizError ? (
+              <p className="text-red-600">{quizError}</p>
+            ) : quizProgress.length === 0 ? (
+              <p className="text-gray-600">No quiz progress available.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {quizProgress.map(
+                  ({ quizId, quizTitle, correctAnswers, totalQuestions }) => {
+                    const completionPercentage =
+                      totalQuestions > 0
+                        ? Math.round((correctAnswers / totalQuestions) * 100)
+                        : 0;
+
+                    return (
+                      <div
+                        key={quizId}
+                        className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
+                        onClick={() => navigate(`/student/quizzes/${quizId}`)}
+                      >
+                        <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
+                          {quizTitle}
+                        </h3>
+                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                          <span>Completion</span>
+                          <span>{completionPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div
+                            className="h-3 rounded-full"
+                            style={{
+                              width: `${completionPercentage}%`,
+                              backgroundColor: getColor(completionPercentage),
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 🕓 Recent Activity */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">🕓 Recent Activity</h2>
+            <ul className="list-disc pl-5 text-gray-700 space-y-1">
+              <li>Watched “Intro to React” – 2 days ago</li>
+              <li>Submitted Assignment 1 for Web Dev – 3 days ago</li>
+              <li>Scored 8/10 in HTML Quiz – 5 days ago</li>
+            </ul>
+          </div>
+        </main>
+        <StudentFooter />
+      </div>
     </div>
   );
 };

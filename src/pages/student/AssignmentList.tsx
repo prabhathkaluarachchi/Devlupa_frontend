@@ -107,7 +107,7 @@ const AssignmentList: React.FC = () => {
                 )}
                 <button
                   onClick={() => navigate(`/assignments/${a._id}/attempt`)}
-                  className="mt-auto bg-gradient-to-r from-green-500 to-lime-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+                  className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
                 >
                   Attempt Assignment
                 </button>
