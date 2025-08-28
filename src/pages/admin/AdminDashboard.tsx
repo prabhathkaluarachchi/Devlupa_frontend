@@ -32,23 +32,28 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserProgress | null>(null);
-  const [quizProgressMap, setQuizProgressMap] = useState<Map<string, any>>(
-    new Map()
-  );
+  const [quizProgressMap, setQuizProgressMap] = useState<Map<string, any>>(new Map());
+  const [assignmentProgressMap, setAssignmentProgressMap] = useState<Map<string, any>>(new Map());
 
   useEffect(() => {
     Promise.all([
       API.get("/admin/users-progress"),
       API.get("/admin/dashboard-summary"),
       API.get("/admin/users-quiz-progress"),
+      API.get("/admin/users-assignment-progress"),
     ])
-      .then(([progressRes, summaryRes, quizProgressRes]) => {
+      .then(([progressRes, summaryRes, quizRes, assignmentRes]) => {
         setUserProgressList(progressRes.data);
         setSummary(summaryRes.data);
 
         const quizMap = new Map();
-        quizProgressRes.data.forEach((qp: any) => quizMap.set(qp.userId, qp));
+        quizRes.data.forEach((qp: any) => quizMap.set(qp.userId, qp));
         setQuizProgressMap(quizMap);
+
+        const assignmentMap = new Map();
+        assignmentRes.data.forEach((ap: any) => assignmentMap.set(ap.userId, ap.assignments));
+        setAssignmentProgressMap(assignmentMap);
+
         setLoading(false);
       })
       .catch((err) => {
@@ -98,26 +103,17 @@ const AdminDashboard: React.FC = () => {
     <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
       <AdminHeader />
       <main className="p-6 flex-grow max-w-7xl mx-auto w-full">
-        <h1 className="text-4xl font-bold text-[#4F46E5] mb-8">
-          Admin Dashboard
-        </h1>
+        <h1 className="text-4xl font-bold text-[#4F46E5] mb-8">Admin Dashboard</h1>
 
         {summary && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-            {[
-              "Total Users",
-              "Total Courses",
-              "Total Quizzes",
-              "Total Assignments",
-            ].map((label, idx) => (
+            {["Total Users", "Total Courses", "Total Quizzes", "Total Assignments"].map((label, idx) => (
               <div
                 key={label}
                 className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition"
               >
                 <p className="text-gray-500 font-semibold">{label}</p>
-                <p className="text-4xl font-extrabold text-[#4F46E5] mt-2">
-                  {Object.values(summary)[idx]}
-                </p>
+                <p className="text-4xl font-extrabold text-[#4F46E5] mt-2">{Object.values(summary)[idx]}</p>
               </div>
             ))}
           </div>
@@ -126,35 +122,17 @@ const AdminDashboard: React.FC = () => {
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           {[
-            {
-              label: "📚 Manage Courses",
-              desc: "Add, edit, or delete courses.",
-              link: "/admin/courses",
-            },
-            {
-              label: "📝 Manage Quizzes",
-              desc: "Create and review quizzes.",
-              link: "/admin/quizzes",
-            },
-            {
-              label: "📂 Manage Assignments",
-              desc: "Track and score assignments.",
-              link: "/admin-assignments",
-            },
-            {
-              label: "🎓 Manage Certificates",
-              desc: "Issue and manage certificates.",
-              link: "/admin-certificates",
-            },
+            { label: "📚 Manage Courses", desc: "Add, edit, or delete courses.", link: "/admin/courses" },
+            { label: "📝 Manage Quizzes", desc: "Create and review quizzes.", link: "/admin/quizzes" },
+            { label: "📂 Manage Assignments", desc: "Track and score assignments.", link: "/admin/assignments" },
+            { label: "🎓 Manage Certificates", desc: "Issue and manage certificates.", link: "/admin-certificates" },
           ].map(({ label, desc, link }) => (
             <div
               key={label}
               className="bg-white rounded-2xl shadow-md p-6 hover:bg-[#EEF2FF] cursor-pointer"
               onClick={() => navigate(link)}
             >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                {label}
-              </h2>
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">{label}</h2>
               <p className="text-gray-600">{desc}</p>
             </div>
           ))}
@@ -162,9 +140,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Users */}
         <section className="mb-10">
-          <h2 className="text-2xl font-semibold text-[#1F2937] mb-6">
-            Registered Users
-          </h2>
+          <h2 className="text-2xl font-semibold text-[#1F2937] mb-6">Registered Users</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {userProgressList.map((user) => (
               <div
@@ -172,12 +148,9 @@ const AdminDashboard: React.FC = () => {
                 onClick={() => setSelectedUser(user)}
                 className="bg-white rounded-2xl shadow p-5 cursor-pointer hover:shadow-lg transition"
               >
-                <h3 className="text-xl font-semibold text-[#4F46E5]">
-                  {user.name}
-                </h3>
+                <h3 className="text-xl font-semibold text-[#4F46E5]">{user.name}</h3>
                 <p className="mt-2 text-gray-600">
-                  Enrolled in {user.progress.length} course
-                  {user.progress.length !== 1 ? "s" : ""}
+                  Enrolled in {user.progress.length} course{user.progress.length !== 1 ? "s" : ""}
                 </p>
                 <button
                   onClick={(e) => {
@@ -196,9 +169,7 @@ const AdminDashboard: React.FC = () => {
         {selectedUser && (
           <section className="bg-white rounded-2xl shadow p-6 max-w-4xl mx-auto mb-10">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-[#1F2937]">
-                {selectedUser.name}'s Progress
-              </h2>
+              <h2 className="text-2xl font-semibold text-[#1F2937]">{selectedUser.name}'s Progress</h2>
               <button
                 onClick={() => setSelectedUser(null)}
                 className="text-red-500 hover:underline font-semibold"
@@ -207,109 +178,126 @@ const AdminDashboard: React.FC = () => {
               </button>
             </div>
 
+            {/* Course Progress */}
             <div className="mb-10">
-              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
-                📘 Course Progress
-              </h3>
+              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">📘 Course Progress</h3>
               {selectedUser.progress.length === 0 ? (
                 <p className="text-gray-500">No course progress yet.</p>
               ) : (
                 <div className="space-y-6">
-                  {selectedUser.progress.map(
-                    ({ courseId, courseTitle, percentage }) => (
-                      <div
-                        key={courseId}
-                        className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
-                      >
-                        <p className="font-medium text-[#1F2937] text-lg mb-1">
-                          {courseTitle}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-2">
-                          Completion:{" "}
-                          <span className="font-medium text-[#4F46E5]">
-                            {percentage}%
-                          </span>
-                        </p>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div
-                            className="h-3 rounded-full transition-all duration-300"
-                            style={{
-                              width: `${percentage}%`,
-                              backgroundColor:
-                                percentage >= 80
-                                  ? "#16a34a"
-                                  : percentage >= 50
-                                  ? "#facc15"
-                                  : "#ef4444",
-                            }}
-                          />
-                        </div>
+                  {selectedUser.progress.map(({ courseId, courseTitle, percentage }) => (
+                    <div
+                      key={courseId}
+                      className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+                    >
+                      <p className="font-medium text-[#1F2937] text-lg mb-1">{courseTitle}</p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Completion: <span className="font-medium text-[#4F46E5]">{percentage}%</span>
+                      </p>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="h-3 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor:
+                              percentage >= 80 ? "#16a34a" : percentage >= 50 ? "#facc15" : "#ef4444",
+                          }}
+                        />
                       </div>
-                    )
-                  )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
+            {/* Quiz Progress */}
             <div className="mb-10">
-              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
-                📝 Quiz Progress
-              </h3>
+              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">📝 Quiz Progress</h3>
               {quizProgressMap.has(selectedUser._id) &&
               quizProgressMap.get(selectedUser._id).quizzes.length > 0 ? (
                 <div className="space-y-4">
-                  {quizProgressMap
-                    .get(selectedUser._id)
-                    .quizzes.map((quiz: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
-                      >
-                        <h4 className="text-lg font-semibold text-[#1F2937] mb-1">
-                          {quiz.quizTitle}
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          Correct:{" "}
-                          <span className="font-medium text-[#4F46E5]">
-                            {quiz.correctAnswers}
-                          </span>{" "}
-                          / {quiz.totalQuestions} (
-                          <span className="font-medium">
-                            {quiz.scorePercentage}%
-                          </span>
-                          )
-                        </p>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div
-                            className="h-3 rounded-full"
-                            style={{
-                              width: `${quiz.scorePercentage}%`,
-                              backgroundColor:
-                                quiz.scorePercentage >= 80
-                                  ? "#16a34a"
-                                  : quiz.scorePercentage >= 50
-                                  ? "#facc15"
-                                  : "#ef4444",
-                            }}
-                          />
-                        </div>
+                  {quizProgressMap.get(selectedUser._id).quizzes.map((quiz: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+                    >
+                      <h4 className="text-lg font-semibold text-[#1F2937] mb-1">{quiz.quizTitle}</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Correct: <span className="font-medium text-[#4F46E5]">{quiz.correctAnswers}</span> /{" "}
+                        {quiz.totalQuestions} (<span className="font-medium">{quiz.scorePercentage}%</span>)
+                      </p>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="h-3 rounded-full"
+                          style={{
+                            width: `${quiz.scorePercentage}%`,
+                            backgroundColor:
+                              quiz.scorePercentage >= 80
+                                ? "#16a34a"
+                                : quiz.scorePercentage >= 50
+                                ? "#facc15"
+                                : "#ef4444",
+                          }}
+                        />
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <p className="italic text-gray-500">
-                  No quiz progress available.
-                </p>
+                <p className="italic text-gray-500">No quiz progress available.</p>
               )}
             </div>
 
-            <div className="mb-2">
-              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
-                📂 Assignment Progress
-              </h3>
-              <p className="italic text-gray-500">
-                Coming soon – assignment tracking logic here...
-              </p>
+            {/* Assignment Progress */}
+            <div className="mb-10">
+              <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">📂 Assignment Progress</h3>
+              {assignmentProgressMap.has(selectedUser._id) &&
+              assignmentProgressMap.get(selectedUser._id).length > 0 ? (
+                <div className="space-y-4">
+                  {assignmentProgressMap.get(selectedUser._id).map((assignment: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+                    >
+                      <h4 className="text-lg font-semibold text-[#1F2937] mb-1">{assignment.title}</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Status:{" "}
+                        <span className="font-medium">
+                          {assignment.submitted ? "Submitted" : "Not Submitted"}
+                        </span>
+                      </p>
+                      {assignment.submitted && (
+                        <>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Score:{" "}
+                            <span className="font-medium text-[#4F46E5]">
+                              {assignment.score !== null ? `${assignment.score}/${assignment.totalScore}` : "Pending"}
+                            </span>
+                          </p>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className="h-3 rounded-full"
+                              style={{
+                                width: `${assignment.score !== null ? (assignment.score / assignment.totalScore) * 100 : 0}%`,
+                                backgroundColor:
+                                  assignment.score !== null
+                                    ? assignment.score / assignment.totalScore >= 0.8
+                                      ? "#16a34a"
+                                      : assignment.score / assignment.totalScore >= 0.5
+                                      ? "#facc15"
+                                      : "#ef4444"
+                                    : "#ccc",
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="italic text-gray-500">No assignment progress available.</p>
+              )}
             </div>
           </section>
         )}

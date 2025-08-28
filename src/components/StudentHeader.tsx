@@ -68,14 +68,14 @@ const Header: React.FC = () => {
           Courses
         </Link>
         <Link
-          to="/student-quizzes"
+          to="/quizzes"
           className="text-gray-700 hover:text-[#4F46E5]"
           onClick={closeMenu}
         >
           Quizzes
         </Link>
         <Link
-          to="/student-assignments"
+          to="/assignments"
           className="text-gray-700 hover:text-[#4F46E5]"
           onClick={closeMenu}
         >

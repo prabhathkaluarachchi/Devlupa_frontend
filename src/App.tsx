@@ -15,6 +15,10 @@ import AdminCourses from "./pages/admin/AdminCourses";
 import StudentAllQuizzes from "./pages/student/StudentAllQuizzes";
 import Courses from "./pages/student/Courses";
 import CourseDetail from "./pages/student/CourseDetail";
+import Test from "./pages/common/Test";
+import AdminAssignments from "./pages/admin/AdminAssignments";
+import AttemptAssignment from "./pages/student/AttemptAssignment";
+import AssignmentList from "./pages/student/AssignmentList";
 
 const App: React.FC = () => {
   return (
@@ -23,6 +27,7 @@ const App: React.FC = () => {
         <Route path="/" element={<AuthPage />} />
         <Route path="/register" element={<AuthPage />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/test" element={<Test />} />
 
         {/* Admin protected routes */}
         <Route
@@ -55,6 +60,14 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute role="admin">
               <AdminCourses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/assignments"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminAssignments />
             </ProtectedRoute>
           }
         />
@@ -95,6 +108,23 @@ const App: React.FC = () => {
           }
         />
         <Route
+          path="/assignments"
+          element={
+            <ProtectedRoute role="student">
+              <AssignmentList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/assignments/:assignmentId"
+          element={
+            <ProtectedRoute role="student">
+              <AttemptAssignment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/courses/:courseId/quizzes"
           element={
             <ProtectedRoute role="student">
@@ -111,10 +141,38 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        {/* All assignments */}
+        <Route
+          path="/assignments"
+          element={
+            <ProtectedRoute role="student">
+              <AssignmentList />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Assignments per course */}
+        <Route
+          path="/courses/:courseId/assignments"
+          element={
+            <ProtectedRoute role="student">
+              <AssignmentList />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Assignment attempt page */}
+        <Route
+          path="/assignments/:assignmentId/attempt"
+          element={
+            <ProtectedRoute role="student">
+              <AttemptAssignment />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/forgot-password" element={<AuthPage />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        
       </Routes>
     </BrowserRouter>
   );
