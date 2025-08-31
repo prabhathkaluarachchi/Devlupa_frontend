@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API from "../../utils/axiosInstance";
-import AdminHeader from "../../components/AdminHeader";
 import AdminFooter from "../../components/AdminFooter";
+import AdminSidebar from "../../components/AdminSidebar";
 
 interface Course {
   _id: string;
@@ -85,9 +85,12 @@ const AdminAssignments: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
-      <AdminHeader />
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <AdminSidebar />
 
+            {/* Main content */}
+      <div className="flex-1 flex flex-col md:ml-64 bg-[#F9FAFB]">
       <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
         <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
           Admin: Manage Assignments
@@ -196,6 +199,7 @@ const AdminAssignments: React.FC = () => {
       </main>
 
       <AdminFooter />
+      </div>
     </div>
   );
 };

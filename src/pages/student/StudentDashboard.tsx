@@ -36,7 +36,9 @@ const StudentDashboard: React.FC = () => {
 
       try {
         const quizRes = await axios.get("/users/studentquizprogress");
-        const quizzes = Array.isArray(quizRes.data.quizzes) ? quizRes.data.quizzes : [];
+        const quizzes = Array.isArray(quizRes.data.quizzes)
+          ? quizRes.data.quizzes
+          : [];
         setQuizProgress(quizzes);
       } catch {
         setQuizError("Failed to load quiz progress");
@@ -78,7 +80,9 @@ const StudentDashboard: React.FC = () => {
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
           </svg>
-          <span className="mt-4 text-[#4F46E5] font-semibold">Loading dashboard...</span>
+          <span className="mt-4 text-[#4F46E5] font-semibold">
+            Loading dashboard...
+          </span>
         </div>
       </div>
     );
@@ -102,28 +106,38 @@ const StudentDashboard: React.FC = () => {
               className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
               onClick={() => navigate("/courses")}
             >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📚 My Courses</h2>
-              <p className="text-gray-600">View and continue your enrolled courses.</p>
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
+                📚 My Courses
+              </h2>
+              <p className="text-gray-600">
+                View and continue your enrolled courses.
+              </p>
             </div>
             <div
               className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
               onClick={() => navigate("/quizzes")}
             >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📝 My Quizzes</h2>
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
+                📝 My Quizzes
+              </h2>
               <p className="text-gray-600">Take or review your quizzes.</p>
             </div>
             <div
               className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
               onClick={() => navigate("/assignments")}
             >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">📂 My Assignments</h2>
+              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
+                📂 My Assignments
+              </h2>
               <p className="text-gray-600">Submit and track assignments.</p>
             </div>
           </div>
 
           {/* 📘 Course Progress */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📘 Course Progress</h2>
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
+              📘 Course Progress
+            </h2>
             {error ? (
               <p className="text-red-600">{error}</p>
             ) : progress.length === 0 ? (
@@ -160,7 +174,9 @@ const StudentDashboard: React.FC = () => {
 
           {/* 📝 Quiz Progress */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">📝 Quiz Progress</h2>
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
+              📝 Quiz Progress
+            </h2>
             {quizError ? (
               <p className="text-red-600">{quizError}</p>
             ) : quizProgress.length === 0 ? (
@@ -206,7 +222,9 @@ const StudentDashboard: React.FC = () => {
 
           {/* 🕓 Recent Activity */}
           <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">🕓 Recent Activity</h2>
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
+              🕓 Recent Activity
+            </h2>
             <ul className="list-disc pl-5 text-gray-700 space-y-1">
               <li>Watched “Intro to React” – 2 days ago</li>
               <li>Submitted Assignment 1 for Web Dev – 3 days ago</li>

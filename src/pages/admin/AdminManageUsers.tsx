@@ -48,7 +48,7 @@ const AdminManageUsers = () => {
       <AdminSidebar />
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col md:ml-64 bg-gray-50">
+      <div className="flex-1 flex flex-col md:ml-64 bg-[#F9FAFB]">
         <main className="flex-1 p-6">
           <h1 className="text-2xl font-bold mb-4">Manage Users</h1>
           <table className="w-full border bg-white rounded-lg shadow overflow-hidden">
