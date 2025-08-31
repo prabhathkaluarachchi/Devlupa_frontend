@@ -50,6 +50,7 @@ const AdminDashboard: React.FC = () => {
         setUserProgressList(progressRes.data);
         setSummary(summaryRes.data);
 
+
         const quizMap = new Map();
         quizRes.data.forEach((qp: any) => quizMap.set(qp.userId, qp));
         setQuizProgressMap(quizMap);
@@ -348,7 +349,9 @@ const AdminDashboard: React.FC = () => {
                                 <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
                                   📂 Assignment Progress
                                 </h3>
-                                {assignmentProgressMap.has(selectedUser._id) &&
+
+                                {selectedUser &&
+                                assignmentProgressMap.has(selectedUser._id) &&
                                 assignmentProgressMap.get(selectedUser._id)
                                   .length > 0 ? (
                                   <div className="space-y-4">
@@ -362,6 +365,8 @@ const AdminDashboard: React.FC = () => {
                                           <h4 className="text-lg font-semibold text-[#1F2937]">
                                             {assignment.title}
                                           </h4>
+
+                                          {/* Status */}
                                           <p className="text-sm text-gray-600 mb-2">
                                             Status:{" "}
                                             <span className="font-medium">
@@ -370,44 +375,54 @@ const AdminDashboard: React.FC = () => {
                                                 : "Not Submitted"}
                                             </span>
                                           </p>
-                                          {assignment.submitted && (
-                                            <>
+
+                                          {/* Score */}
+                                          {assignment.submitted &&
+                                            assignment.score !== null && (
                                               <p className="text-sm text-gray-600 mb-2">
                                                 Score:{" "}
                                                 <span className="font-medium text-[#4F46E5]">
-                                                  {assignment.score !== null
-                                                    ? `${assignment.score}/${assignment.totalScore}`
-                                                    : "Pending"}
+                                                  {assignment.score}%
                                                 </span>
                                               </p>
-                                              <div className="w-full bg-gray-200 rounded-full h-3">
-                                                <div
-                                                  className="h-3 rounded-full"
-                                                  style={{
-                                                    width: `${
-                                                      assignment.score !== null
-                                                        ? (assignment.score /
-                                                            assignment.totalScore) *
-                                                          100
-                                                        : 0
-                                                    }%`,
-                                                    backgroundColor:
-                                                      assignment.score !== null
-                                                        ? assignment.score /
-                                                            assignment.totalScore >=
-                                                          0.8
-                                                          ? "#16a34a"
-                                                          : assignment.score /
-                                                              assignment.totalScore >=
-                                                            0.5
-                                                          ? "#facc15"
-                                                          : "#ef4444"
-                                                        : "#ccc",
-                                                  }}
-                                                />
-                                              </div>
-                                            </>
-                                          )}
+                                            )}
+
+                                          {/* Grade Button */}
+                                          {assignment.submitted &&
+                                            assignment.score === null && (
+                                              <button
+                                                onClick={() =>
+                                                  navigate(
+                                                    `/admin/assignments/${assignment.assignmentId}/user/${selectedUser._id}/grade`
+                                                  )
+                                                }
+                                                className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition"
+                                              >
+                                                Grade
+                                              </button>
+                                            )}
+
+                                          {/* Progress Bar */}
+                                          <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+                                            <div
+                                              className="h-3 rounded-full"
+                                              style={{
+                                                width: `${
+                                                  assignment.score ?? 0
+                                                }%`,
+                                                backgroundColor:
+                                                  assignment.score !== null
+                                                    ? assignment.score >= 80
+                                                      ? "#16a34a"
+                                                      : assignment.score >= 50
+                                                      ? "#facc15"
+                                                      : "#ef4444"
+                                                    : assignment.submitted
+                                                    ? "#ccc"
+                                                    : "#ef4444",
+                                              }}
+                                            />
+                                          </div>
                                         </div>
                                       ))}
                                   </div>

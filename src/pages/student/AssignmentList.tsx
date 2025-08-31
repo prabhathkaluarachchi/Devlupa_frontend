@@ -91,7 +91,11 @@ const AssignmentList: React.FC = () => {
               >
                 {a.imageUrl && (
                   <img
-                    src={a.imageUrl}
+                    src={
+                      a.imageUrl.startsWith("http")
+                        ? a.imageUrl
+                        : `http://localhost:5000${a.imageUrl}`
+                    }
                     alt={a.title}
                     className="rounded-xl mb-4 object-cover h-40 w-full"
                   />
@@ -99,7 +103,9 @@ const AssignmentList: React.FC = () => {
                 <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
                   {a.title}
                 </h2>
-                <p className="text-gray-600 mb-4 line-clamp-3">{a.description}</p>
+                <p className="text-gray-600 mb-4 line-clamp-3">
+                  {a.description}
+                </p>
                 {a.dueDate && (
                   <p className="text-gray-500 mb-4">
                     Due: {new Date(a.dueDate).toLocaleDateString()}

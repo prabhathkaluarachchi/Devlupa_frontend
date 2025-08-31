@@ -20,6 +20,7 @@ import AdminAssignments from "./pages/admin/AdminAssignments";
 import AttemptAssignment from "./pages/student/AttemptAssignment";
 import AssignmentList from "./pages/student/AssignmentList";
 import AdminManageUsers from "./pages/admin/AdminManageUsers";
+import GradeAssignment from "./pages/admin/GradeAssignment";
 
 const App: React.FC = () => {
   return (
@@ -78,6 +79,24 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute role="admin">
               <AdminManageUsers />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* <Route
+          path="/admin/grade"
+          element={
+            <ProtectedRoute role="admin">
+              <GradeAssignment />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        <Route
+          path="/admin/assignments/:assignmentId/user/:userId/grade"
+          element={
+            <ProtectedRoute role="admin">
+              <GradeAssignment />
             </ProtectedRoute>
           }
         />
