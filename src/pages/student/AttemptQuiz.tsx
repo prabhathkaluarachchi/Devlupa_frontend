@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
-import StudentHeader from "../../components/StudentHeader";
 import StudentFooter from "../../components/StudentFooter";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface Option {
   text: string;
@@ -17,7 +17,7 @@ interface Question {
 interface Quiz {
   _id: string;
   title: string;
-  timeLimit: number; // in minutes
+  timeLimit: number;
   questions: Question[];
 }
 
@@ -151,27 +151,37 @@ const AttemptQuiz: React.FC = () => {
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
-        <div className="text-[#4F46E5] text-lg font-semibold">Loading quiz...</div>
+        <div className="text-[#4F46E5] text-lg font-semibold">
+          Loading quiz...
+        </div>
       </div>
     );
   if (!quiz)
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
-        <div className="text-red-600 text-lg font-semibold">Quiz not found.</div>
+        <div className="text-red-600 text-lg font-semibold">
+          Quiz not found.
+        </div>
       </div>
     );
 
   return (
-    <>
-      <StudentHeader />
-      <div className="min-h-screen px-4 py-6 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center text-[#4F46E5]">{quiz.title}</h1>
+    <div className="flex bg-[#F9FAFB] min-h-screen">
+      {/* Sidebar */}
+      <StudentSidebar />
 
-        {score === null && (
-          <div className="mb-8 text-center">
-            {!timeExpired ? (
-              <span
-                className={`inline-block text-xl font-bold px-5 py-2 rounded-full shadow 
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
+        <div className="flex-1 p-6 w-full">
+          <h1 className="text-3xl font-bold mb-6 text-center text-[#4F46E5]">
+            {quiz.title}
+          </h1>
+
+          {score === null && (
+            <div className="mb-8 text-center">
+              {!timeExpired ? (
+                <span
+                  className={`inline-block text-xl font-bold px-5 py-2 rounded-full shadow 
                 ${
                   timeLeft > 30
                     ? "bg-green-100 text-green-800"
@@ -179,114 +189,118 @@ const AttemptQuiz: React.FC = () => {
                     ? "bg-yellow-100 text-yellow-800"
                     : "bg-red-100 text-red-800 animate-pulse"
                 }`}
-                aria-live="polite"
-                aria-atomic="true"
-                role="timer"
-              >
-                ⏱ Time Left: {formatTime(timeLeft)}
-              </span>
-            ) : (
-              <span
-                className="inline-block text-xl font-bold px-5 py-2 rounded-full shadow bg-red-600 text-white animate-pulse"
-                aria-live="polite"
-                aria-atomic="true"
-                role="alert"
-              >
-                ⏰ Time's up!
-              </span>
-            )}
-          </div>
-        )}
-
-        {quiz.questions.map((q, i) => (
-          <div
-            key={i}
-            className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm"
-          >
-            <p className="font-medium text-lg mb-4">
-              {i + 1}. {q.question}
-            </p>
-
-            <div className="space-y-3">
-              {q.options.map((opt, idx) => {
-                const isSelected = answers[i] === idx;
-                const isCorrect = opt.isCorrect;
-
-                let borderColor = "border-gray-300";
-                let bgColor = "bg-white";
-                let icon = null;
-
-                if (score !== null) {
-                  if (isSelected && isCorrect) {
-                    borderColor = "border-green-500";
-                    bgColor = "bg-green-100";
-                    icon = "✅";
-                  } else if (isSelected && !isCorrect) {
-                    borderColor = "border-red-500";
-                    bgColor = "bg-red-100";
-                    icon = "❌";
-                  } else if (!isSelected && isCorrect) {
-                    borderColor = "border-green-300";
-                    bgColor = "bg-green-50";
-                    icon = "✅";
-                  }
-                } else if (isSelected) {
-                  borderColor = "border-blue-500";
-                  bgColor = "bg-blue-50";
-                }
-
-                return (
-                  <label
-                    key={idx}
-                    htmlFor={`question-${i}-option-${idx}`}
-                    className={`flex items-center p-3 rounded-lg border ${borderColor} ${bgColor} cursor-pointer transition-all`}
-                  >
-                    <input
-                      type="radio"
-                      id={`question-${i}-option-${idx}`}
-                      name={`question-${i}`}
-                      value={idx}
-                      checked={isSelected}
-                      onChange={() => handleChange(i, idx)}
-                      disabled={score !== null || timeExpired}
-                      className="mr-3 cursor-pointer"
-                      aria-checked={isSelected}
-                    />
-                    <span className="text-sm sm:text-base flex-1">{opt.text}</span>
-                    {score !== null && icon && (
-                      <span className="ml-2 text-lg" aria-hidden="true">
-                        {icon}
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
+                  aria-live="polite"
+                  aria-atomic="true"
+                  role="timer"
+                >
+                  ⏱ Time Left: {formatTime(timeLeft)}
+                </span>
+              ) : (
+                <span
+                  className="inline-block text-xl font-bold px-5 py-2 rounded-full shadow bg-red-600 text-white animate-pulse"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  role="alert"
+                >
+                  ⏰ Time's up!
+                </span>
+              )}
             </div>
-          </div>
-        ))}
+          )}
 
-        {score === null ? (
-          <button
-            onClick={handleSubmit}
-            disabled={answers.includes(-1) || timeExpired}
-            className={`mt-6 w-full py-3 rounded-xl text-white font-semibold transition 
+          {quiz.questions.map((q, i) => (
+            <div
+              key={i}
+              className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm"
+            >
+              <p className="font-medium text-lg mb-4">
+                {i + 1}. {q.question}
+              </p>
+
+              <div className="space-y-3">
+                {q.options.map((opt, idx) => {
+                  const isSelected = answers[i] === idx;
+                  const isCorrect = opt.isCorrect;
+
+                  let borderColor = "border-gray-300";
+                  let bgColor = "bg-white";
+                  let icon = null;
+
+                  if (score !== null) {
+                    if (isSelected && isCorrect) {
+                      borderColor = "border-green-500";
+                      bgColor = "bg-green-100";
+                      icon = "✅";
+                    } else if (isSelected && !isCorrect) {
+                      borderColor = "border-red-500";
+                      bgColor = "bg-red-100";
+                      icon = "❌";
+                    } else if (!isSelected && isCorrect) {
+                      borderColor = "border-green-300";
+                      bgColor = "bg-green-50";
+                      icon = "✅";
+                    }
+                  } else if (isSelected) {
+                    borderColor = "border-blue-500";
+                    bgColor = "bg-blue-50";
+                  }
+
+                  return (
+                    <label
+                      key={idx}
+                      htmlFor={`question-${i}-option-${idx}`}
+                      className={`flex items-center p-3 rounded-lg border ${borderColor} ${bgColor} cursor-pointer transition-all`}
+                    >
+                      <input
+                        type="radio"
+                        id={`question-${i}-option-${idx}`}
+                        name={`question-${i}`}
+                        value={idx}
+                        checked={isSelected}
+                        onChange={() => handleChange(i, idx)}
+                        disabled={score !== null || timeExpired}
+                        className="mr-3 cursor-pointer"
+                        aria-checked={isSelected}
+                      />
+                      <span className="text-sm sm:text-base flex-1">
+                        {opt.text}
+                      </span>
+                      {score !== null && icon && (
+                        <span className="ml-2 text-lg" aria-hidden="true">
+                          {icon}
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {score === null ? (
+            <button
+              onClick={handleSubmit}
+              disabled={answers.includes(-1) || timeExpired}
+              className={`mt-6 w-full py-3 rounded-xl text-white font-semibold transition 
               ${
                 answers.includes(-1) || timeExpired
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90"
               }`}
-            aria-disabled={answers.includes(-1) || timeExpired}
-          >
-            Submit Quiz
-          </button>
-        ) : (
-          <div className="mt-8 bg-green-50 text-green-800 border border-green-300 rounded-lg p-4 text-center text-xl font-semibold shadow-sm">
-            🎉 Your Score: {score}/{quiz.questions.length}
-          </div>
-        )}
+              aria-disabled={answers.includes(-1) || timeExpired}
+            >
+              Submit Quiz
+            </button>
+          ) : (
+            <div className="mt-8 bg-green-50 text-green-800 border border-green-300 rounded-lg p-4 text-center text-xl font-semibold shadow-sm">
+              🎉 Your Score: {score}/{quiz.questions.length}
+            </div>
+          )}
+        </div>
+
+        <StudentFooter />
       </div>
-      <StudentFooter />
-    </>
+    </div>
   );
 };
 

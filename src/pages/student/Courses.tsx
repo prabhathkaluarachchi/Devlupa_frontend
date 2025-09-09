@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
-import StudentHeader from "../../components/StudentHeader";
 import StudentFooter from "../../components/StudentFooter";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface Video {
   _id: string;
@@ -85,10 +85,15 @@ const CoursesPage: React.FC = () => {
     );
 
   return (
-    <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
-      <StudentHeader />
 
-      <main className="flex-grow max-w-7xl mx-auto w-full p-6">
+
+        <div className="flex bg-[#F9FAFB] min-h-screen">
+      {/* Sidebar */}
+      <StudentSidebar />
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
+              <main className="flex-grow max-w-7xl mx-auto w-full p-6">
         <h1 className="text-3xl font-bold text-[#4F46E5] mb-8 flex items-center gap-2">
           📚 Available Courses
         </h1>
@@ -136,7 +141,8 @@ const CoursesPage: React.FC = () => {
         )}
       </main>
 
-      <StudentFooter />
+        <StudentFooter />
+      </div>
     </div>
   );
 };

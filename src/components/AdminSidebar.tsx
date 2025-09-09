@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -9,28 +9,29 @@ import {
   LogOut,
   Menu,
   X,
-} from "lucide-react"; // lucide-react icons
+} from "lucide-react";
 
 const AdminSidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/");
+    navigate("/admin/login");
   };
 
-  if (!token) {
-    return (
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-[#4F46E5]">
-          <Link to="/">DevLupa Admin</Link>
-        </h1>
-      </header>
-    );
-  }
+  if (!token) return null;
+
+  const links = [
+    { name: "Dashboard", path: "/admin", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { name: "Courses", path: "/admin/courses", icon: <BookOpen className="w-5 h-5" /> },
+    { name: "Quizzes", path: "/admin/quizzes", icon: <FileQuestion className="w-5 h-5" /> },
+    { name: "Assignments", path: "/admin/assignments", icon: <ClipboardList className="w-5 h-5" /> },
+    { name: "Users", path: "/admin/users", icon: <Users className="w-5 h-5" /> },
+  ];
 
   return (
     <>
@@ -44,9 +45,9 @@ const AdminSidebar: React.FC = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white shadow-lg z-40 transform transition-transform duration-300
-        w-64 flex flex-col border-r border-gray-200
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed top-0 left-0 h-full bg-[#e0f0ff] shadow-lg z-40 transform transition-transform duration-300
+          w-64 flex flex-col border-r border-gray-200
+          ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b">
@@ -54,47 +55,31 @@ const AdminSidebar: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-          <Link
-            to="/admin"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link
-            to="/admin/courses"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <BookOpen className="w-5 h-5" />
-            Courses
-          </Link>
-          <Link
-            to="/admin/quizzes"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <FileQuestion className="w-5 h-5" />
-            Quizzes
-          </Link>
-          <Link
-            to="/admin/assignments"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <ClipboardList className="w-5 h-5" />
-            Assignments
-          </Link>
-          <Link
-            to="/admin/users"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <Users className="w-5 h-5" />
-            Users
-          </Link>
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+{links.map((link) => {
+  let isActive = false;
+  if (link.path === "/admin") {
+    // Dashboard: exact match only
+    isActive = location.pathname === link.path;
+  } else {
+    // Other links: starts with path
+    isActive = location.pathname.startsWith(link.path);
+  }
+
+  return (
+    <Link
+      key={link.name}
+      to={link.path}
+      onClick={() => setIsOpen(false)}
+      className={`flex items-center gap-3 p-2 rounded-lg transition
+        ${isActive ? "bg-[#4F46E5] text-white" : "text-gray-700 hover:bg-[#4F46E5] hover:text-white"}`}
+    >
+      {link.icon}
+      {link.name}
+    </Link>
+  );
+})}
+
         </nav>
 
         {/* Logout button */}

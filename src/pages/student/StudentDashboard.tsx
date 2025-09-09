@@ -97,7 +97,7 @@ const StudentDashboard: React.FC = () => {
       <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
         <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
           <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
-            Welcome to Your Dashboard 👋
+            Dashboard
           </h1>
 
           {/* Quick Links */}
@@ -194,7 +194,7 @@ const StudentDashboard: React.FC = () => {
                       <div
                         key={quizId}
                         className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
-                        onClick={() => navigate(`/student/quizzes/${quizId}`)}
+                        onClick={() => navigate(`/quizzes/${quizId}`)}
                       >
                         <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
                           {quizTitle}

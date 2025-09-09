@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
-import StudentHeader from "../../components/StudentHeader";
 import StudentFooter from "../../components/StudentFooter";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface Quiz {
   _id: string;
@@ -67,50 +67,56 @@ const StudentAllQuizzes: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
-      <StudentHeader />
+    <div className="flex bg-[#F9FAFB] min-h-screen">
+      {/* Sidebar */}
+      <StudentSidebar />
 
-      <main className="flex-grow max-w-7xl mx-auto w-full p-6">
-        <h1 className="text-3xl font-bold text-[#4F46E5] mb-8 flex items-center gap-2">
-          📝 Available Quizzes
-        </h1>
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
+        <main className="flex-grow max-w-7xl mx-auto w-full p-6">
+          <h1 className="text-3xl font-bold text-[#4F46E5] mb-8 flex items-center gap-2">
+            📝 Available Quizzes
+          </h1>
 
-        {quizzes.length === 0 ? (
-          <p className="text-gray-600 text-center">
-            No quizzes available at the moment.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {quizzes.map((quiz) => (
-              <div
-                key={quiz._id}
-                className="bg-white rounded-2xl shadow-md p-6 flex flex-col hover:bg-[#EEF2FF] transition"
-              >
-                <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                  {quiz.title}
-                </h2>
-                <p className="text-gray-700 mb-2">
-                  <span className="font-medium text-gray-800">Course:</span>{" "}
-                  {quiz.course ? quiz.course.title : "Course Deleted"}
-                </p>
-                <p className="text-gray-600 mb-6">
-                  <span className="font-medium text-gray-800">Time Limit:</span>{" "}
-                  {quiz.timeLimit} minutes
-                </p>
-
-                <button
-                  onClick={() => navigate(`/student/quizzes/${quiz._id}`)}
-                  className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+          {quizzes.length === 0 ? (
+            <p className="text-gray-600 text-center">
+              No quizzes available at the moment.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {quizzes.map((quiz) => (
+                <div
+                  key={quiz._id}
+                  className="bg-white rounded-2xl shadow-md p-6 flex flex-col hover:bg-[#EEF2FF] transition"
                 >
-                  Start Quiz
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+                  <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
+                    {quiz.title}
+                  </h2>
+                  <p className="text-gray-700 mb-2">
+                    <span className="font-medium text-gray-800">Course:</span>{" "}
+                    {quiz.course ? quiz.course.title : "Course Deleted"}
+                  </p>
+                  <p className="text-gray-600 mb-6">
+                    <span className="font-medium text-gray-800">
+                      Time Limit:
+                    </span>{" "}
+                    {quiz.timeLimit} minutes
+                  </p>
 
-      <StudentFooter />
+                  <button
+                    onClick={() => navigate(`/quizzes/${quiz._id}`)}
+                    className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+                  >
+                    Start Quiz
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
+
+        <StudentFooter />
+      </div>
     </div>
   );
 };

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../../utils/axiosInstance";
-import StudentHeader from "../../components/StudentHeader";
 import StudentFooter from "../../components/StudentFooter";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface StudentSubmission {
   content?: string;
   fileUrl?: string;
-  status?: string; // "submitted" | "graded"
+  status?: string; 
   grade?: number;
 }
 
@@ -100,9 +100,15 @@ const AttemptAssignment: React.FC = () => {
     return <div className="text-center mt-10">Assignment not found.</div>;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9FAFB]">
-      <StudentHeader />
-      <main className="flex-grow max-w-3xl mx-auto p-4">
+
+
+        <div className="flex bg-[#F9FAFB] min-h-screen">
+      {/* Sidebar */}
+      <StudentSidebar />
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
+              <main className="flex-grow max-w-3xl mx-auto p-4">
         <div className="bg-white shadow-md rounded-lg p-6">
           <h1 className="text-2xl font-bold mb-4">{assignment.title}</h1>
           <p className="mb-4">{assignment.description}</p>
@@ -181,7 +187,9 @@ const AttemptAssignment: React.FC = () => {
           )}
         </div>
       </main>
-      <StudentFooter />
+
+        <StudentFooter />
+      </div>
     </div>
   );
 };

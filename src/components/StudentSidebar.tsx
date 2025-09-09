@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -8,11 +8,12 @@ import {
   LogOut,
   Menu,
   X,
-} from "lucide-react"; // lucide-react icons
+} from "lucide-react";
 
 const StudentSidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
 
   const handleLogout = () => {
@@ -39,6 +40,29 @@ const StudentSidebar: React.FC = () => {
     );
   }
 
+  const links = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    {
+      name: "Courses",
+      path: "/courses",
+      icon: <BookOpen className="w-5 h-5" />,
+    },
+    {
+      name: "Quizzes",
+      path: "/quizzes",
+      icon: <FileQuestion className="w-5 h-5" />,
+    },
+    {
+      name: "Assignments",
+      path: "/assignments",
+      icon: <ClipboardList className="w-5 h-5" />,
+    },
+  ];
+
   return (
     <>
       {/* Mobile toggle button */}
@@ -46,12 +70,16 @@ const StudentSidebar: React.FC = () => {
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md"
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        {isOpen ? <X className="w-6 h-6 text-gray-700" /> : <Menu className="w-6 h-6 text-gray-700" />}
+        {isOpen ? (
+          <X className="w-6 h-6 text-gray-700" />
+        ) : (
+          <Menu className="w-6 h-6 text-gray-700" />
+        )}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white shadow-lg z-40 transform transition-transform duration-300
+        className={`fixed top-0 left-0 h-full bg-[#e0f0ff] shadow-lg z-40 transform transition-transform duration-300
         w-64 flex flex-col border-r border-gray-200
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
@@ -61,39 +89,28 @@ const StudentSidebar: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link
-            to="/courses"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <BookOpen className="w-5 h-5" />
-            Courses
-          </Link>
-          <Link
-            to="/quizzes"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <FileQuestion className="w-5 h-5" />
-            Quizzes
-          </Link>
-          <Link
-            to="/assignments"
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#4F46E5] hover:text-white transition"
-            onClick={() => setIsOpen(false)}
-          >
-            <ClipboardList className="w-5 h-5" />
-            Assignments
-          </Link>
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+          {links.map((link) => {
+            // check if current path starts with link path
+            const isActive = location.pathname.startsWith(link.path);
+
+            return (
+              <Link
+                key={link.name}
+                to={link.path}
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 p-2 rounded-lg transition
+        ${
+          isActive
+            ? "bg-[#4F46E5] text-white"
+            : "text-gray-700 hover:bg-[#4F46E5] hover:text-white"
+        }`}
+              >
+                {link.icon}
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Logout button */}

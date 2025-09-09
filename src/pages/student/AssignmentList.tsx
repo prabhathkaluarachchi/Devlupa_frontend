@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
-import StudentHeader from "../../components/StudentHeader";
 import StudentFooter from "../../components/StudentFooter";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface Assignment {
   _id: string;
@@ -69,60 +69,66 @@ const AssignmentList: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#F9FAFB] min-h-screen flex flex-col">
-      <StudentHeader />
-      <main className="flex-grow max-w-6xl mx-auto w-full p-6">
-        <h1 className="text-3xl font-bold text-[#4F46E5] mb-8">
-          {courseId ? "📚 Assignments for This Course" : "📚 All Assignments"}
-        </h1>
+    <div className="flex bg-[#F9FAFB] min-h-screen">
+      {/* Sidebar */}
+      <StudentSidebar />
 
-        {assignments.length === 0 ? (
-          <p className="text-gray-600 text-center">
-            {courseId
-              ? "No assignments available for this course."
-              : "No assignments available."}
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assignments.map((a) => (
-              <div
-                key={a._id}
-                className="bg-white rounded-2xl shadow-md p-6 flex flex-col hover:bg-[#EEF2FF] transition"
-              >
-                {a.imageUrl && (
-                  <img
-                    src={
-                      a.imageUrl.startsWith("http")
-                        ? a.imageUrl
-                        : `http://localhost:5000${a.imageUrl}`
-                    }
-                    alt={a.title}
-                    className="rounded-xl mb-4 object-cover h-40 w-full"
-                  />
-                )}
-                <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                  {a.title}
-                </h2>
-                <p className="text-gray-600 mb-4 line-clamp-3">
-                  {a.description}
-                </p>
-                {a.dueDate && (
-                  <p className="text-gray-500 mb-4">
-                    Due: {new Date(a.dueDate).toLocaleDateString()}
-                  </p>
-                )}
-                <button
-                  onClick={() => navigate(`/assignments/${a._id}/attempt`)}
-                  className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
+        <main className="flex-grow  mx-auto w-full p-6">
+          <h1 className="text-3xl font-bold text-[#4F46E5] mb-8">
+            {courseId ? "📚 Assignments for This Course" : "📚 All Assignments"}
+          </h1>
+
+          {assignments.length === 0 ? (
+            <p className="text-gray-600 text-center">
+              {courseId
+                ? "No assignments available for this course."
+                : "No assignments available."}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {assignments.map((a) => (
+                <div
+                  key={a._id}
+                  className="bg-white rounded-2xl shadow-md p-6 flex flex-col hover:bg-[#EEF2FF] transition"
                 >
-                  Attempt Assignment
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-      <StudentFooter />
+                  {a.imageUrl && (
+                    <img
+                      src={
+                        a.imageUrl.startsWith("http")
+                          ? a.imageUrl
+                          : `http://localhost:5000${a.imageUrl}`
+                      }
+                      alt={a.title}
+                      className="rounded-xl mb-4 object-cover h-40 w-full"
+                    />
+                  )}
+                  <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
+                    {a.title}
+                  </h2>
+                  <p className="text-gray-600 mb-4 line-clamp-3">
+                    {a.description}
+                  </p>
+                  {a.dueDate && (
+                    <p className="text-gray-500 mb-4">
+                      Due: {new Date(a.dueDate).toLocaleDateString()}
+                    </p>
+                  )} 
+                  <button
+                    onClick={() => navigate(`/assignments/${a._id}/attempt`)}
+                    className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+                  >
+                    Attempt Assignment
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
+
+        <StudentFooter />
+      </div>
     </div>
   );
 };

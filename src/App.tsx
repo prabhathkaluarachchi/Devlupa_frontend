@@ -163,7 +163,7 @@ const App: React.FC = () => {
         />
 
         <Route
-          path="/student/quizzes/:quizId"
+          path="/quizzes/:quizId"
           element={
             <ProtectedRoute role="student">
               <AttemptQuiz />

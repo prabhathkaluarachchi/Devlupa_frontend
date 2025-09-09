@@ -5,7 +5,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminFooter from "../../components/AdminFooter";
 
 interface Submission {
-  _id: string; // submission document ID
+  _id: string;
   userId: string;
   userName: string;
   assignmentId: string;
