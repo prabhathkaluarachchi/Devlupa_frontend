@@ -3,6 +3,17 @@ import API from "../../utils/axiosInstance";
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminFooter from "../../components/AdminFooter";
 import { useNavigate } from "react-router-dom";
+import {
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  ComposedChart,
+} from "recharts";
 
 interface CourseProgress {
   courseId: string;
@@ -16,6 +27,13 @@ interface UserProgress {
   _id: string;
   name: string;
   progress: CourseProgress[];
+}
+
+interface Summary {
+  totalUsers: number;
+  totalCourses: number;
+  totalQuizzes: number;
+  totalAssignments: number;
 }
 
 interface Summary {
@@ -39,6 +57,29 @@ const AdminDashboard: React.FC = () => {
     Map<string, any>
   >(new Map());
 
+  const cardItems: { label: string; key: keyof Summary; color: string }[] = [
+    {
+      label: "Total Users",
+      key: "totalUsers",
+      color: "from-blue-400 to-blue-600",
+    },
+    {
+      label: "Total Courses",
+      key: "totalCourses",
+      color: "from-green-400 to-green-600",
+    },
+    {
+      label: "Total Quizzes",
+      key: "totalQuizzes",
+      color: "from-yellow-400 to-yellow-500",
+    },
+    {
+      label: "Total Assignments",
+      key: "totalAssignments",
+      color: "from-pink-400 to-pink-600",
+    },
+  ];
+
   useEffect(() => {
     Promise.all([
       API.get("/admin/users-progress"),
@@ -49,7 +90,6 @@ const AdminDashboard: React.FC = () => {
       .then(([progressRes, summaryRes, quizRes, assignmentRes]) => {
         setUserProgressList(progressRes.data);
         setSummary(summaryRes.data);
-
 
         const quizMap = new Map();
         quizRes.data.forEach((qp: any) => quizMap.set(qp.userId, qp));
@@ -118,27 +158,55 @@ const AdminDashboard: React.FC = () => {
             Admin Dashboard
           </h1>
 
+          {/* Summary Section */}
           {summary && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-              {[
-                "Total Users",
-                "Total Courses",
-                "Total Quizzes",
-                "Total Assignments",
-              ].map((label, idx) => (
-                <div
-                  key={label}
-                  className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition"
-                >
-                  <p className="text-gray-500 font-semibold">{label}</p>
-                  <p className="text-4xl font-extrabold text-[#4F46E5] mt-2">
-                    {Object.values(summary)[idx]}
-                  </p>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
+              {/* Left: Cards (2x2, smaller width) */}
+              <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                {cardItems.map(({ label, key }) => {
+                  const value = summary[key];
+                  return (
+                    <div
+                      key={label}
+                      className="bg-blue-500 text-white rounded-2xl shadow-md p-4 flex flex-col justify-center"
+                    >
+                      <p className="text-lg font-semibold">{label}</p>
+                      <p className="text-3xl font-extrabold mt-2">{value}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right: Combined Chart (wider) */}
+              <div className="md:col-span-3 bg-white rounded-2xl shadow-md p-6">
+                <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
+                  Summary Chart
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart
+                    data={cardItems.map(({ label, key }) => ({
+                      name: label,
+                      value: summary[key],
+                    }))}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="value" fill="#1E40AF" radius={[4, 4, 0, 0]} />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#FBBF24"
+                      strokeWidth={3}
+                      dot={{ r: 5 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
-
           {/* Quick Links */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
             {[
@@ -146,26 +214,34 @@ const AdminDashboard: React.FC = () => {
                 label: "📚 Manage Courses",
                 desc: "Add, edit, or delete courses.",
                 link: "/admin/courses",
+                bg: "bg-white",
+                hover: "hover:bg-[#EEF2FF]",
               },
               {
                 label: "📝 Manage Quizzes",
                 desc: "Create and review quizzes.",
                 link: "/admin/quizzes",
+                bg: "bg-white",
+                hover: "hover:bg-[#FEF3C7]",
               },
               {
                 label: "📂 Manage Assignments",
                 desc: "Track and score assignments.",
                 link: "/admin/assignments",
+                bg: "bg-white",
+                hover: "hover:bg-[#E0F2FE]",
               },
               {
-                label: "🎓 Manage Certificates",
-                desc: "Issue and manage certificates.",
-                link: "/admin-certificates",
+                label: "🎓 Manage Users",
+                desc: "View and manage user accounts.",
+                link: "/admin/users",
+                bg: "bg-white",
+                hover: "hover:bg-[#FCE7F3]",
               },
-            ].map(({ label, desc, link }) => (
+            ].map(({ label, desc, link, bg, hover }) => (
               <div
                 key={label}
-                className="bg-white rounded-2xl shadow-md p-6 hover:bg-[#EEF2FF] cursor-pointer"
+                className={`${bg} ${hover} rounded-2xl shadow-md p-6 cursor-pointer transition`}
                 onClick={() => navigate(link)}
               >
                 <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
