@@ -168,7 +168,7 @@ const AdminDashboard: React.FC = () => {
                   return (
                     <div
                       key={label}
-                      className="bg-blue-500 text-white rounded-2xl shadow-md p-4 flex flex-col justify-center"
+                      className="bg-white text-[#1F2937] rounded-2xl shadow-md p-4 flex flex-col justify-center"
                     >
                       <p className="text-lg font-semibold">{label}</p>
                       <p className="text-3xl font-extrabold mt-2">{value}</p>
@@ -194,7 +194,7 @@ const AdminDashboard: React.FC = () => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" fill="#1E40AF" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#1E40AF" radius={[4, 4, 0, 0]} barSize={60} />
                     <Line
                       type="monotone"
                       dataKey="value"
