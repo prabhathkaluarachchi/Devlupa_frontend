@@ -10,7 +10,7 @@ interface Submission {
   userName: string;
   assignmentId: string;
   assignmentTitle: string;
-  content?: string;
+  submission?: string;
   fileUrl?: string;
   score?: number;
   remarks?: string;
@@ -78,63 +78,61 @@ const GradeAssignment: React.FC = () => {
             Grade Assignment
           </h1>
 
-          <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-2">
-              {submission.assignmentTitle}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Submitted by: {submission.userName}
-            </p>
+          {/* Show Student Submission */}
+          <div className="bg-gray-50 border rounded-xl p-4 mb-6">
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">
+              Student Submission
+            </h3>
 
-            {submission.content && (
+            {submission.submission && (
               <div className="mb-4">
-                <h3 className="font-medium mb-1">Text Submission:</h3>
-                <pre className="bg-gray-100 p-3 rounded">
-                  {submission.content}
+                <h4 className="font-medium mb-1">Text Submission:</h4>
+                <pre className="bg-gray-100 p-3 rounded whitespace-pre-wrap">
+                  {submission.submission}
                 </pre>
               </div>
             )}
 
             {submission.fileUrl && (
               <div className="mb-4">
-                <h3 className="font-medium mb-1">Uploaded File:</h3>
+                <h4 className="font-medium mb-1">Uploaded File:</h4>
                 <a
                   href={`http://localhost:5000${submission.fileUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 underline"
                 >
-                  📂 Download File
+                  📂 Download Submitted File
                 </a>
               </div>
             )}
+          </div>
 
-            {/* Grade Form */}
-            <div className="mt-6">
-              <label className="block font-medium mb-2">Score</label>
-              <input
-                type="number"
-                value={score}
-                onChange={(e) => setScore(Number(e.target.value))}
-                placeholder="Enter score (e.g. 85)"
-                className="w-full border border-gray-300 rounded p-2 mb-4"
-              />
+          {/* Grading Form */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <label className="block font-medium mb-2">Score</label>
+            <input
+              type="number"
+              value={score}
+              onChange={(e) => setScore(Number(e.target.value))}
+              placeholder="Enter score (e.g. 85)"
+              className="w-full border border-gray-300 rounded p-2 mb-4"
+            />
 
-              <label className="block font-medium mb-2">Remarks</label>
-              <textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Feedback for student"
-                className="w-full border border-gray-300 rounded p-2 h-24"
-              />
+            <label className="block font-medium mb-2">Remarks</label>
+            <textarea
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="Feedback for student"
+              className="w-full border border-gray-300 rounded p-2 h-24"
+            />
 
-              <button
-                onClick={handleGrade}
-                className="mt-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
-              >
-                Save Grade
-              </button>
-            </div>
+            <button
+              onClick={handleGrade}
+              className="mt-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+            >
+              Save Grade
+            </button>
           </div>
         </main>
         <AdminFooter />
