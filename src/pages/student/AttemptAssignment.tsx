@@ -9,6 +9,7 @@ interface StudentSubmission {
   fileUrl?: string;
   status?: string; 
   grade?: number;
+  remarks?: string;
 }
 
 interface Assignment {
@@ -152,11 +153,19 @@ const AttemptAssignment: React.FC = () => {
                 </a>
               )}
 
-              {assignment.studentSubmission?.status === "graded" && (
-                <p className="mt-3 text-green-700 font-semibold">
-                  🎉 Graded: {assignment.studentSubmission.grade}%
-                </p>
-              )}
+{assignment.studentSubmission?.status === "graded" && (
+  <div className="mt-3">
+    <p className="text-green-700 font-semibold">
+      🎉 Graded: {assignment.studentSubmission.grade}%
+    </p>
+    {assignment.studentSubmission?.remarks && (
+      <p className="mt-2 text-gray-700">
+        📝 Feedback: {assignment.studentSubmission.remarks}
+      </p>
+    )}
+  </div>
+)}
+
             </div>
           ) : (
             <div className="flex flex-col">
