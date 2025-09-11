@@ -136,11 +136,11 @@ const AdminCourses: React.FC = () => {
       <div className="flex-1 flex flex-col md:ml-64 bg-gray-50">
         <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
           <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
-            Admin: Manage Courses & Videos
+            Manage Courses & Videos
           </h1>
 
-          {/* Add New Course */}
-          <section className="bg-white rounded-2xl shadow-md p-6 max-w-md mb-10">
+          {/* Add New Course Card */}
+          <section className="bg-white rounded-2xl shadow-md p-6 max-w-md mb-10 mx-auto md:mx-0">
             <h2 className="text-2xl font-semibold mb-4">Add New Course</h2>
             <input
               type="text"
@@ -158,23 +158,26 @@ const AdminCourses: React.FC = () => {
             />
             <button
               onClick={addCourse}
-              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition"
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition w-full"
             >
               Add Course
             </button>
           </section>
 
-          {/* List All Courses */}
-          <section className="space-y-8">
+          {/* Courses Grid */}
+          <section className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {courses.length === 0 && (
-              <p className="text-gray-500 text-center">No courses available.</p>
+              <p className="text-gray-500 text-center col-span-full">
+                No courses available.
+              </p>
             )}
+
             {courses.map((course) => (
               <div
                 key={course._id}
-                className="bg-white rounded-2xl shadow-md p-6 border border-gray-200"
+                className="bg-white rounded-2xl shadow-md p-6 border border-gray-200 flex flex-col justify-between"
               >
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div className="flex justify-between items-start">
                   <div
                     onClick={() =>
                       setSelectedCourseId(
@@ -183,26 +186,24 @@ const AdminCourses: React.FC = () => {
                     }
                     className="cursor-pointer flex-1"
                   >
-                    <h3 className="text-2xl font-bold text-[#1F2937] hover:underline">
+                    <h3 className="text-xl font-bold text-[#1F2937] hover:underline mb-4">
                       {course.title}
                     </h3>
                     <p className="text-gray-600 mt-1">{course.description}</p>
                   </div>
                   <button
                     onClick={() => deleteCourse(course._id)}
-                    className="mt-4 md:mt-0 text-red-600 hover:text-red-800 font-semibold transition"
+                    className="text-red-600 hover:text-red-800 font-semibold transition"
                     aria-label={`Delete course ${course.title}`}
                   >
-                    Delete Course
+                    Delete
                   </button>
                 </div>
 
                 {/* Video Management */}
                 {selectedCourseId === course._id && (
-                  <div className="mt-6 border-t border-gray-200 pt-6">
-                    <h4 className="text-xl font-semibold mb-4">
-                      Add New Video
-                    </h4>
+                  <div className="mt-6 border-t border-gray-200 pt-6 flex flex-col gap-4">
+                    <h4 className="text-lg font-semibold">Add New Video</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <input
                         type="text"
@@ -221,37 +222,38 @@ const AdminCourses: React.FC = () => {
                     </div>
                     <button
                       onClick={addVideo}
-                      className="mt-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-2xl shadow transition"
+                      className="mt-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-2xl shadow transition w-full md:w-auto"
                     >
                       Add Video
                     </button>
 
-                    <h5 className="mt-8 mb-3 text-lg font-semibold">Videos</h5>
-                    <ul className="divide-y divide-gray-200 max-h-60 overflow-y-auto">
-                      {course.videos.length === 0 && (
+                    {/* Videos List */}
+                    <div className="mt-4 flex flex-col gap-2">
+                      {course.videos.length === 0 ? (
                         <p className="text-gray-500 italic">No videos yet.</p>
+                      ) : (
+                        course.videos.map((video) => (
+                          <div
+                            key={video._id}
+                            className={`flex justify-between items-center bg-gray-100 rounded-lg p-3 shadow-sm w-full`}
+                          >
+                            <span
+                              className="truncate font-medium"
+                              title={video.title}
+                            >
+                              {video.title}
+                            </span>
+                            <button
+                              onClick={() => deleteVideo(course._id, video._id)}
+                              className="text-red-500 hover:text-red-700 font-semibold ml-2 text-sm"
+                              aria-label={`Delete video ${video.title}`}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ))
                       )}
-                      {course.videos.map((video) => (
-                        <li
-                          key={video._id}
-                          className="flex justify-between items-center py-3"
-                        >
-                          <span
-                            className="truncate max-w-[70%]"
-                            title={video.title}
-                          >
-                            {video.title}
-                          </span>
-                          <button
-                            onClick={() => deleteVideo(course._id, video._id)}
-                            className="text-red-500 hover:text-red-700 font-semibold transition text-sm"
-                            aria-label={`Delete video ${video.title}`}
-                          >
-                            Delete
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
               </div>

@@ -26,12 +26,20 @@ const AdminAssignments: React.FC = () => {
   const [dueDate, setDueDate] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const fetchAssignments = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await API.get("/assignments");
       setAssignments(res.data);
-    } catch {
-      alert("Failed to load assignments");
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load assignments");
+      setLoading(false);
     }
   };
 
@@ -39,8 +47,8 @@ const AdminAssignments: React.FC = () => {
     try {
       const res = await API.get("/courses");
       setCourses(res.data);
-    } catch {
-      console.error("Error fetching courses");
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -50,9 +58,7 @@ const AdminAssignments: React.FC = () => {
   }, []);
 
   const createAssignment = async () => {
-    if (!courseId || !title.trim()) {
-      return alert("Course and title are required");
-    }
+    if (!courseId || !title.trim()) return alert("Course and title are required");
 
     try {
       const formData = new FormData();
@@ -81,29 +87,73 @@ const AdminAssignments: React.FC = () => {
 
   const deleteAssignment = async (id: string) => {
     if (!window.confirm("Are you sure to delete this assignment?")) return;
+    setLoading(true);
     try {
       await API.delete(`/assignments/${id}`);
       await fetchAssignments();
+      setLoading(false);
       alert("Assignment deleted");
-    } catch {
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
       alert("Failed to delete assignment");
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
+        <div className="flex flex-col items-center">
+          <svg
+            className="animate-spin h-12 w-12 text-[#4F46E5]"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          <span className="text-[#4F46E5] text-lg font-semibold mt-4">
+            Loading assignments...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-6 text-red-600 text-center bg-[#F9FAFB] min-h-screen">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <AdminSidebar />
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col md:ml-64 bg-[#F9FAFB]">
         <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
           <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
-            Admin: Manage Assignments
+            Manage Assignments
           </h1>
 
-          {/* Add Assignment Form */}
-          <section className="bg-white rounded-2xl shadow-md p-6 max-w-md mb-10">
+          {/* Create Assignment Card */}
+          <section className="bg-white rounded-2xl shadow-md p-6 max-w-md mb-10 mx-auto md:mx-0">
             <h2 className="text-2xl font-semibold mb-4">Create Assignment</h2>
 
             <select
@@ -153,16 +203,16 @@ const AdminAssignments: React.FC = () => {
 
             <button
               onClick={createAssignment}
-              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition"
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-2xl shadow transition w-full"
             >
               Create Assignment
             </button>
           </section>
 
-          {/* List Assignments */}
-          <section className="space-y-6">
+          {/* Assignment Cards Grid */}
+          <section className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {assignments.length === 0 && (
-              <p className="text-gray-500 text-center">
+              <p className="text-gray-500 text-center col-span-full">
                 No assignments available.
               </p>
             )}
@@ -170,43 +220,41 @@ const AdminAssignments: React.FC = () => {
             {assignments.map((a) => (
               <div
                 key={a._id}
-                className="bg-white rounded-2xl shadow-md p-6 border border-gray-200"
+                className="bg-white rounded-2xl shadow-md p-6 border border-gray-200 flex flex-col justify-between"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-bold text-[#1F2937]">
-                      {a.title}
-                    </h3>
-                    <p className="text-gray-600">{a.description}</p>
-                    {a.imageUrl && (
-                      <img
-                        src={
-                          a.imageUrl.startsWith("http")
-                            ? a.imageUrl
-                            : `http://localhost:5000${a.imageUrl}`
-                        }
-                        alt={a.title}
-                        className="mt-3 rounded-lg w-40"
-                      />
-                    )}
+                <div>
+                  <h3 className="text-xl font-bold text-[#1F2937]">{a.title}</h3>
+                  <p className="text-gray-600 mt-1">{a.description}</p>
 
-                    {a.dueDate && (
-                      <p className="text-sm text-gray-500 mt-2">
-                        Due: {new Date(a.dueDate).toLocaleDateString()}
-                      </p>
-                    )}
-                    <p className="mt-1 text-sm text-gray-700">
-                      Course: {a.courseId?.title || "N/A"}
+                  {a.imageUrl && (
+                    <img
+                      src={
+                        a.imageUrl.startsWith("http")
+                          ? a.imageUrl
+                          : `http://localhost:5000${a.imageUrl}`
+                      }
+                      alt={a.title}
+                      className="mt-3 rounded-lg w-full object-cover h-40"
+                    />
+                  )}
+
+                  {a.dueDate && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Due: {new Date(a.dueDate).toLocaleDateString()}
                     </p>
-                  </div>
+                  )}
 
-                  <button
-                    onClick={() => deleteAssignment(a._id)}
-                    className="text-red-600 hover:text-red-800 font-semibold transition"
-                  >
-                    Delete
-                  </button>
+                  <p className="mt-1 text-sm text-gray-700">
+                    Course: {a.courseId?.title || "N/A"}
+                  </p>
                 </div>
+
+                <button
+                  onClick={() => deleteAssignment(a._id)}
+                  className="mt-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </section>
