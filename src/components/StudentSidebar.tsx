@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -9,9 +9,17 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import axios from "../utils/axiosInstance";
+import logo from "../assets/logopng-01.png"; // updated logo
+
+interface UserProfile {
+  name: string;
+  email: string;
+}
 
 const StudentSidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem("token");
@@ -21,6 +29,19 @@ const StudentSidebar: React.FC = () => {
     localStorage.removeItem("user");
     navigate("/");
   };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!token) return;
+      try {
+        const res = await axios.get("/users/profile");
+        setUser(res.data);
+      } catch (err) {
+        console.error("Failed to fetch user profile", err);
+      }
+    };
+    fetchUser();
+  }, [token]);
 
   if (!token) {
     return (
@@ -83,28 +104,38 @@ const StudentSidebar: React.FC = () => {
         w-64 flex flex-col border-r border-gray-200
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-center h-16 border-b">
-          <h1 className="text-2xl font-bold text-[#4F46E5]">DevLupa</h1>
+        {/* Logo + User Profile */}
+        <div className="flex flex-col items-center justify-center border-b p-4 text-center">
+          <img
+            src={logo}
+            alt="DevLupa Logo"
+            className="h-16 object-contain mb-3"
+          />
+          {user && (
+            <div>
+              <p className="text-gray-800 font-semibold text-base">
+                {user.name}
+              </p>
+              <p className="text-gray-500 text-[12px] truncate">{user.email}</p>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
           {links.map((link) => {
-            // check if current path starts with link path
             const isActive = location.pathname.startsWith(link.path);
-
             return (
               <Link
                 key={link.name}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 p-2 rounded-lg transition
-        ${
-          isActive
-            ? "bg-[#4F46E5] text-white"
-            : "text-gray-700 hover:bg-[#4F46E5] hover:text-white"
-        }`}
+                ${
+                  isActive
+                    ? "bg-[#4F46E5] text-white"
+                    : "text-gray-700 hover:bg-[#4F46E5] hover:text-white"
+                }`}
               >
                 {link.icon}
                 {link.name}
@@ -120,7 +151,7 @@ const StudentSidebar: React.FC = () => {
               handleLogout();
               setIsOpen(false);
             }}
-            className="flex items-center gap-3 text-red-500 hover:bg-red-100 w-full p-2 rounded-lg"
+            className="flex items-center gap-2 justify-center w-full bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg font-semibold transition"
           >
             <LogOut className="w-5 h-5" />
             Logout

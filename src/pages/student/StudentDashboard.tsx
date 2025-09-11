@@ -24,6 +24,22 @@ const StudentDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
+  const [userName, setUserName] = useState("Student");
+
+useEffect(() => {
+  const fetchUserName = async () => {
+    try {
+      const res = await axios.get("/users/profile"); // ✅ only logged-in user
+      setUserName(res.data.name || "Student");
+    } catch (err) {
+      console.error(err);
+      setUserName("Student");
+    }
+  };
+
+  fetchUserName();
+}, []);
+
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -96,9 +112,10 @@ const StudentDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
         <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
-          <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
-            Dashboard
-          </h1>
+<h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
+  Welcome, {userName}
+</h1>
+
 
           {/* Quick Links */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
