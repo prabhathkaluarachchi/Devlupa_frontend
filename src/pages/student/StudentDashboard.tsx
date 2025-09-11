@@ -17,6 +17,14 @@ interface QuizProgress {
   correctAnswers: number;
 }
 
+interface AssignmentProgress {
+  assignmentId: string;
+  assignmentTitle: string;
+  submitted: boolean;
+  status: "Pending" | "Submitted" | "Graded";
+  score: number | null; // ✅ add score
+}
+
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState<CourseProgress[]>([]);
@@ -25,21 +33,38 @@ const StudentDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
   const [userName, setUserName] = useState("Student");
+  const [assignmentProgress, setAssignmentProgress] = useState<
+    AssignmentProgress[]
+  >([]);
 
-useEffect(() => {
-  const fetchUserName = async () => {
-    try {
-      const res = await axios.get("/users/profile"); // ✅ only logged-in user
-      setUserName(res.data.name || "Student");
-    } catch (err) {
-      console.error(err);
-      setUserName("Student");
-    }
-  };
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
-  fetchUserName();
-}, []);
+  useEffect(() => {
+    const fetchUserName = async () => {
+      try {
+        const res = await axios.get("/users/profile");
+        setUserName(res.data.name || "Student");
+      } catch (err) {
+        console.error(err);
+        setUserName("Student");
+      }
+    };
 
+    fetchUserName();
+  }, []);
+
+  useEffect(() => {
+    const fetchAssignmentsProgress = async () => {
+      try {
+        const res = await axios.get("/assignments/progress");
+        setAssignmentProgress(res.data.assignments || []);
+      } catch {
+        setAssignmentError("Failed to load assignment progress");
+      }
+    };
+
+    fetchAssignmentsProgress();
+  }, []);
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -112,10 +137,9 @@ useEffect(() => {
       {/* Main Content */}
       <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
         <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
-<h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
-  Welcome, {userName}
-</h1>
-
+          <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
+            Welcome, {userName}
+          </h1>
 
           {/* Quick Links */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -232,6 +256,65 @@ useEffect(() => {
                       </div>
                     );
                   }
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 🗂 Assignment Progress */}
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
+              🗂 Assignment Progress
+            </h2>
+            {assignmentError ? (
+              <p className="text-red-600">{assignmentError}</p>
+            ) : assignmentProgress.length === 0 ? (
+              <p className="text-gray-600">No assignments yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {assignmentProgress.map(
+                  ({ assignmentId, assignmentTitle, status, score }) => (
+                    <div
+                      key={assignmentId}
+                      className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
+                    >
+                      <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
+                        {assignmentTitle}
+                      </h3>
+
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Status</span>
+                        <span>{status}</span>
+                      </div>
+
+                      {status === "Graded" && score !== null && (
+                        <div className="flex justify-between text-sm text-gray-600 mb-2">
+                          <span>Score</span>
+                          <span>{score}</span>
+                        </div>
+                      )}
+
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="h-3 rounded-full"
+                          style={{
+                            width:
+                              status === "Graded"
+                                ? "100%"
+                                : status === "Submitted"
+                                ? "50%"
+                                : "0%",
+                            backgroundColor:
+                              status === "Graded"
+                                ? "#16a34a"
+                                : status === "Submitted"
+                                ? "#facc15"
+                                : "#ef4444",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
                 )}
               </div>
             )}
