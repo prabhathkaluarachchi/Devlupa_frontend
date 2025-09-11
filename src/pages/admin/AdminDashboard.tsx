@@ -4,6 +4,12 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminFooter from "../../components/AdminFooter";
 import { useNavigate } from "react-router-dom";
 import {
+  HiBookOpen,
+  HiClipboardList,
+  HiDocumentText,
+  HiUserGroup,
+} from "react-icons/hi";
+import {
   Bar,
   Line,
   XAxis,
@@ -194,7 +200,12 @@ const AdminDashboard: React.FC = () => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" fill="#1E40AF" radius={[4, 4, 0, 0]} barSize={60} />
+                    <Bar
+                      dataKey="value"
+                      fill="#1E40AF"
+                      radius={[4, 4, 0, 0]}
+                      barSize={60}
+                    />
                     <Line
                       type="monotone"
                       dataKey="value"
@@ -211,42 +222,49 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
             {[
               {
-                label: "📚 Manage Courses",
+                icon: <HiBookOpen className="text-xl text-[#1F2937]" />,
+                label: "Manage Courses",
                 desc: "Add, edit, or delete courses.",
                 link: "/admin/courses",
                 bg: "bg-white",
                 hover: "hover:bg-[#EEF2FF]",
               },
               {
-                label: "📝 Manage Quizzes",
+                icon: <HiClipboardList className="text-xl text-[#1F2937]" />,
+                label: "Manage Quizzes",
                 desc: "Create and review quizzes.",
                 link: "/admin/quizzes",
                 bg: "bg-white",
                 hover: "hover:bg-[#FEF3C7]",
               },
               {
-                label: "📂 Manage Assignments",
+                icon: <HiDocumentText className="text-xl text-[#1F2937]" />,
+                label: "Manage Assignments",
                 desc: "Track and score assignments.",
                 link: "/admin/assignments",
                 bg: "bg-white",
                 hover: "hover:bg-[#E0F2FE]",
               },
               {
-                label: "🎓 Manage Users",
+                icon: <HiUserGroup className="text-xl text-[#1F2937]" />,
+                label: "Manage Users",
                 desc: "View and manage user accounts.",
                 link: "/admin/users",
                 bg: "bg-white",
                 hover: "hover:bg-[#FCE7F3]",
               },
-            ].map(({ label, desc, link, bg, hover }) => (
+            ].map(({ icon, label, desc, link, bg, hover }) => (
               <div
                 key={label}
                 className={`${bg} ${hover} rounded-2xl shadow-md p-6 cursor-pointer transition`}
                 onClick={() => navigate(link)}
               >
-                <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                  {label}
-                </h2>
+                <div className="flex items-center gap-2 mb-2">
+                  {icon}
+                  <h2 className="text-xl font-semibold text-[#1F2937]">
+                    {label}
+                  </h2>
+                </div>
                 <p className="text-gray-600">{desc}</p>
               </div>
             ))}

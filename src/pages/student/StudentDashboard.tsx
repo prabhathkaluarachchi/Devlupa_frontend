@@ -4,6 +4,8 @@ import axios from "../../utils/axiosInstance";
 import StudentFooter from "../../components/StudentFooter";
 import StudentSidebar from "../../components/StudentSidebar";
 
+import { HiBookOpen, HiClipboardList, HiDocumentText } from "react-icons/hi";  
+
 interface CourseProgress {
   courseId: string;
   courseTitle: string;
@@ -141,38 +143,41 @@ const StudentDashboard: React.FC = () => {
             Welcome, {userName}
           </h1>
 
-          {/* Quick Links */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div
-              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-              onClick={() => navigate("/courses")}
-            >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                📚 My Courses
-              </h2>
-              <p className="text-gray-600">
-                View and continue your enrolled courses.
-              </p>
-            </div>
-            <div
-              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-              onClick={() => navigate("/quizzes")}
-            >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                📝 My Quizzes
-              </h2>
-              <p className="text-gray-600">Take or review your quizzes.</p>
-            </div>
-            <div
-              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-              onClick={() => navigate("/assignments")}
-            >
-              <h2 className="text-xl font-semibold text-[#1F2937] mb-2">
-                📂 My Assignments
-              </h2>
-              <p className="text-gray-600">Submit and track assignments.</p>
-            </div>
-          </div>
+{/* Quick Links */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div
+    className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
+    onClick={() => navigate("/courses")}
+  >
+    <h2 className="flex items-center gap-2 text-xl font-semibold text-[#1F2937] mb-2">
+      <HiBookOpen className="text-[#1F2937]" size={24} />
+      My Courses
+    </h2>
+    <p className="text-gray-600">View and continue your enrolled courses.</p>
+  </div>
+
+  <div
+    className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
+    onClick={() => navigate("/quizzes")}
+  >
+    <h2 className="flex items-center gap-2 text-xl font-semibold text-[#1F2937] mb-2">
+      <HiClipboardList className="text-[#1F2937]" size={24} />
+      My Quizzes
+    </h2>
+    <p className="text-gray-600">Take or review your quizzes.</p>
+  </div>
+
+  <div
+    className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
+    onClick={() => navigate("/assignments")}
+  >
+    <h2 className="flex items-center gap-2 text-xl font-semibold text-[#1F2937] mb-2">
+      <HiDocumentText className="text-[#1F2937]" size={24} />
+      My Assignments
+    </h2>
+    <p className="text-gray-600">Submit and track assignments.</p>
+  </div>
+</div>
 
           {/* 📘 Course Progress */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
@@ -277,6 +282,7 @@ const StudentDashboard: React.FC = () => {
                     <div
                       key={assignmentId}
                       className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
+                      onClick={() => navigate(`/assignments/${assignmentId}`)} // ✅ navigate to assignment page
                     >
                       <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
                         {assignmentTitle}

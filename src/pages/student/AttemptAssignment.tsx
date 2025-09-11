@@ -7,7 +7,7 @@ import StudentSidebar from "../../components/StudentSidebar";
 interface StudentSubmission {
   content?: string;
   fileUrl?: string;
-  status?: string; 
+  status?: string;
   grade?: number;
   remarks?: string;
 }
@@ -41,7 +41,7 @@ const AttemptAssignment: React.FC = () => {
 
         if (res.data.submitted && res.data.studentSubmission) {
           setSubmission(res.data.studentSubmission.content || "");
-          setFile(null); // optional
+          setFile(null);
         }
       } catch (err: any) {
         setError(err.response?.data?.message || "Failed to fetch assignment.");
@@ -56,7 +56,7 @@ const AttemptAssignment: React.FC = () => {
   const handleSubmit = async () => {
     try {
       if (!submission.trim() && !file) {
-        setError("Please provide text or upload a file.");
+        setError("⚠️ Please provide text or upload a file.");
         return;
       }
 
@@ -73,7 +73,7 @@ const AttemptAssignment: React.FC = () => {
         }
       );
 
-      setSuccessMsg("Assignment submitted successfully!");
+      setSuccessMsg("✅ Assignment submitted successfully!");
       setError(null);
 
       setAssignment((prev) =>
@@ -90,7 +90,7 @@ const AttemptAssignment: React.FC = () => {
           : prev
       );
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to submit assignment.");
+      setError(err.response?.data?.message || "❌ Failed to submit assignment.");
     }
   };
 
@@ -101,101 +101,115 @@ const AttemptAssignment: React.FC = () => {
     return <div className="text-center mt-10">Assignment not found.</div>;
 
   return (
-
-
-        <div className="flex bg-[#F9FAFB] min-h-screen">
+    <div className="flex bg-[#F9FAFB] min-h-screen">
       {/* Sidebar */}
       <StudentSidebar />
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
-              <main className="flex-grow max-w-3xl mx-auto p-4">
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h1 className="text-2xl font-bold mb-4">{assignment.title}</h1>
-          <p className="mb-4">{assignment.description}</p>
-          {assignment.imageUrl && (
-            <img
-              src={
-                assignment.imageUrl.startsWith("http")
-                  ? assignment.imageUrl
-                  : `http://localhost:5000${assignment.imageUrl}`
-              }
-              alt={assignment.title}
-              className="mb-4 rounded"
-            />
-          )}
-          {assignment.dueDate && (
-            <p className="mb-4 text-gray-600">
-              Due Date: {new Date(assignment.dueDate).toLocaleString()}
+        <main className="flex-grow max-w-5xl mx-auto p-6 w-full">
+          <div className="bg-white shadow-lg rounded-2xl p-8">
+            {/* Title */}
+            <h1 className="text-3xl font-bold text-[#4F46E5] mb-8">
+              {assignment.title}
+            </h1>
+
+            {/* Description */}
+            <p className="mb-6 text-gray-700 leading-relaxed">
+              {assignment.description}
             </p>
-          )}
 
-          {assignment.submitted ? (
-            <div className="bg-green-100 p-4 rounded">
-              <p className="font-medium text-green-700 mb-2">
-                ✅ You have already submitted this assignment.
-              </p>
-
-              {assignment.studentSubmission?.content && (
-                <pre className="bg-gray-100 p-2 rounded overflow-x-auto mb-2">
-                  {assignment.studentSubmission.content}
-                </pre>
-              )}
-
-              {assignment.studentSubmission?.fileUrl && (
-                <a
-                  href={`http://localhost:5000${assignment.studentSubmission.fileUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline"
-                >
-                  📂 Download submitted file
-                </a>
-              )}
-
-{assignment.studentSubmission?.status === "graded" && (
-  <div className="mt-3">
-    <p className="text-green-700 font-semibold">
-      🎉 Graded: {assignment.studentSubmission.grade}%
-    </p>
-    {assignment.studentSubmission?.remarks && (
-      <p className="mt-2 text-gray-700">
-        📝 Feedback: {assignment.studentSubmission.remarks}
-      </p>
-    )}
-  </div>
-)}
-
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              <textarea
-                value={submission}
-                onChange={(e) => setSubmission(e.target.value)}
-                placeholder="Write your answer here..."
-                className="border border-gray-300 rounded p-2 mb-4 h-48 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-              ></textarea>
-
-              <input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="mb-4"
+            {/* Image */}
+            {assignment.imageUrl && (
+              <img
+                src={
+                  assignment.imageUrl.startsWith("http")
+                    ? assignment.imageUrl
+                    : `http://localhost:5000${assignment.imageUrl}`
+                }
+                alt={assignment.title}
+                className="mb-6 rounded-lg shadow-md max-h-80 w-full object-cover"
               />
+            )}
 
-              <button
-                onClick={handleSubmit}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-              >
-                Submit Assignment
-              </button>
-              {successMsg && (
-                <p className="text-green-600 mt-2">{successMsg}</p>
-              )}
-              {error && <p className="text-red-600 mt-2">{error}</p>}
-            </div>
-          )}
-        </div>
-      </main>
+            {/* Due Date */}
+            {assignment.dueDate && (
+              <p className="mb-6 text-sm text-gray-600">
+                ⏰ <span className="font-medium">Due:</span>{" "}
+                {new Date(assignment.dueDate).toLocaleString()}
+              </p>
+            )}
+
+            {/* Already Submitted */}
+            {assignment.submitted ? (
+              <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                <p className="font-medium text-green-700 mb-3">
+                  ✅ You have already submitted this assignment.
+                </p>
+
+                {assignment.studentSubmission?.content && (
+                  <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-3 text-gray-800">
+                    {assignment.studentSubmission.content}
+                  </pre>
+                )}
+
+                {assignment.studentSubmission?.fileUrl && (
+                  <a
+                    href={`http://localhost:5000${assignment.studentSubmission.fileUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 font-medium underline"
+                  >
+                    📂 Download submitted file
+                  </a>
+                )}
+
+                {/* Grading */}
+                {assignment.studentSubmission?.status === "graded" && (
+                  <div className="mt-4 bg-white border rounded-lg p-4 shadow-sm">
+                    <p className="text-green-700 font-semibold text-lg">
+                      🎉 Graded: {assignment.studentSubmission.grade}%
+                    </p>
+                    {assignment.studentSubmission?.remarks && (
+                      <p className="mt-2 text-gray-700">
+                        📝 Feedback: {assignment.studentSubmission.remarks}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Submission Form */
+              <div className="flex flex-col space-y-4">
+                <textarea
+                  value={submission}
+                  onChange={(e) => setSubmission(e.target.value)}
+                  placeholder="✍️ Write your answer here..."
+                  className="border border-gray-300 rounded-lg p-4 h-48 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                ></textarea>
+
+                <input
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="border border-gray-300 rounded-lg p-2 w-full"
+                />
+
+                <button
+                  onClick={handleSubmit}
+                  className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
+                >
+                  🚀 Submit Assignment
+                </button>
+
+                {/* Alerts */}
+                {successMsg && (
+                  <p className="text-green-600 font-medium">{successMsg}</p>
+                )}
+                {error && <p className="text-red-600 font-medium">{error}</p>}
+              </div>
+            )}
+          </div>
+        </main>
 
         <StudentFooter />
       </div>
