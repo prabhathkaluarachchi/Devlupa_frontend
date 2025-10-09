@@ -52,6 +52,11 @@ const AdminSidebar: React.FC = () => {
       path: "/admin/users",
       icon: <Users className="w-5 h-5" />,
     },
+        {
+      name: "CV Filter",
+      path: "/admin/cv-filter",
+      icon: <Users className="w-5 h-5" />,
+    },
   ];
 
   return (

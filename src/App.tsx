@@ -21,6 +21,7 @@ import AttemptAssignment from "./pages/student/AttemptAssignment";
 import AssignmentList from "./pages/student/AssignmentList";
 import AdminManageUsers from "./pages/admin/AdminManageUsers";
 import GradeAssignment from "./pages/admin/GradeAssignment";
+import AdminCVfilter from "./pages/admin/AdminCVfilter";
 
 const App: React.FC = () => {
   return (
@@ -83,14 +84,14 @@ const App: React.FC = () => {
           }
         />
 
-        {/* <Route
-          path="/admin/grade"
+        <Route
+          path="/admin/cv-filter"
           element={
             <ProtectedRoute role="admin">
-              <GradeAssignment />
+              <AdminCVfilter />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         <Route
           path="/admin/assignments/:assignmentId/user/:userId/grade"
