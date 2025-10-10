@@ -2,6 +2,7 @@ import { useState } from "react";
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminFooter from "../../components/AdminFooter";
 import API from "../../utils/axiosInstance";
+import Swal from "sweetalert2";
 
 interface CVResult {
   fileName: string;
@@ -22,15 +23,15 @@ const AdminCVFilter: React.FC = () => {
   const [sendingEmails, setSendingEmails] = useState<{
     [key: string]: boolean;
   }>({});
-  const [threshold, setThreshold] = useState<number>(45); // Default threshold 45%
+  const [threshold, setThreshold] = useState<number>(45);
   const [sendingBulk, setSendingBulk] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   // Handle multiple file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
       setFiles(newFiles);
-      // Reset previous results
       setResults([]);
 
       const newEmailInputs: { [key: string]: string } = {};
@@ -57,7 +58,12 @@ const AdminCVFilter: React.FC = () => {
   // Analyze Multiple CVs
   const analyzeCVs = async () => {
     if (!files.length || !requirement.trim()) {
-      alert("Please upload CV files and enter the job requirement.");
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Information",
+        text: "Please upload CV files and enter the job requirement.",
+        confirmButtonColor: "#4F46E5",
+      });
       return;
     }
 
@@ -80,7 +86,6 @@ const AdminCVFilter: React.FC = () => {
 
       setResults(res.data.results || []);
 
-      // Pre-fill email inputs with extracted emails
       const newEmailInputs: { [key: string]: string } = {};
       res.data.results.forEach((result: CVResult) => {
         newEmailInputs[result.fileName] = result.extractedEmail || "";
@@ -88,7 +93,12 @@ const AdminCVFilter: React.FC = () => {
       setEmailInputs(newEmailInputs);
     } catch (err: any) {
       console.error("CV Analysis Error:", err);
-      alert(err.response?.data?.message || "⚠️ Failed to analyze CVs.");
+      Swal.fire({
+        icon: "error",
+        title: "Analysis Failed",
+        text: err.response?.data?.message || "⚠️ Failed to analyze CVs.",
+        confirmButtonColor: "#EF4444",
+      });
     } finally {
       setLoading(false);
     }
@@ -107,7 +117,22 @@ const AdminCVFilter: React.FC = () => {
     const email = emailInputs[fileName];
 
     if (!email.trim()) {
-      alert("Please enter or verify the student's email address.");
+      Swal.fire({
+        icon: "warning",
+        title: "Email Required",
+        text: "Please enter or verify the student's email address.",
+        confirmButtonColor: "#4F46E5",
+      });
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Email",
+        text: "Please enter a valid email address.",
+        confirmButtonColor: "#EF4444",
+      });
       return;
     }
 
@@ -115,10 +140,20 @@ const AdminCVFilter: React.FC = () => {
 
     try {
       const res = await API.post("/admin/send-link", { email });
-      alert(res.data.message);
+      Swal.fire({
+        icon: "success",
+        title: "Email Sent!",
+        text: res.data.message,
+        confirmButtonColor: "#10B981",
+      });
     } catch (err: any) {
       console.error("Send Email Error:", err);
-      alert(err.response?.data?.message || "Failed to send email.");
+      Swal.fire({
+        icon: "error",
+        title: "Failed to Send",
+        text: err.response?.data?.message || "Failed to send email.",
+        confirmButtonColor: "#EF4444",
+      });
     } finally {
       setSendingEmails((prev) => ({ ...prev, [fileName]: false }));
     }
@@ -131,40 +166,77 @@ const AdminCVFilter: React.FC = () => {
     );
 
     if (eligibleResults.length === 0) {
-      alert("No eligible students found to send emails.");
+      Swal.fire({
+        icon: "warning",
+        title: "No Eligible Students",
+        text: "No eligible students found to send emails.",
+        confirmButtonColor: "#4F46E5",
+      });
       return;
     }
 
     // Collect valid emails
     const emailsToSend: string[] = [];
+    const missingEmails: string[] = [];
     const invalidEmails: string[] = [];
 
     eligibleResults.forEach((result) => {
       const email = emailInputs[result.fileName]?.trim();
       if (email && isValidEmail(email)) {
         emailsToSend.push(email);
+      } else if (!email) {
+        missingEmails.push(result.fileName);
       } else {
         invalidEmails.push(result.fileName);
       }
     });
 
-    if (invalidEmails.length > 0) {
-      alert(
-        `Please enter valid email addresses for: ${invalidEmails.join(", ")}`
-      );
-      return;
+    // Show warning for missing emails but proceed with available ones
+    if (missingEmails.length > 0 || invalidEmails.length > 0) {
+      let warningMessage = "";
+      if (missingEmails.length > 0) {
+        warningMessage += `Missing emails for: ${missingEmails
+          .slice(0, 5)
+          .join(", ")}${
+          missingEmails.length > 5
+            ? ` and ${missingEmails.length - 5} more`
+            : ""
+        }\n`;
+      }
+      if (invalidEmails.length > 0) {
+        warningMessage += `Invalid emails for: ${invalidEmails
+          .slice(0, 5)
+          .join(", ")}${
+          invalidEmails.length > 5
+            ? ` and ${invalidEmails.length - 5} more`
+            : ""
+        }\n`;
+      }
+      warningMessage += `\nDo you want to send invitations to ${emailsToSend.length} students with valid emails and skip the others?`;
+
+      const result = await Swal.fire({
+        icon: "warning",
+        title: "Email Issues Found",
+        html: warningMessage.replace(/\n/g, "<br>"),
+        showCancelButton: true,
+        confirmButtonText: "Yes, Send",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#10B981",
+        cancelButtonColor: "#6B7280",
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
     }
 
     if (emailsToSend.length === 0) {
-      alert("No valid email addresses found for eligible students.");
-      return;
-    }
-
-    if (
-      !confirm(
-        `Send registration links to ${emailsToSend.length} eligible students?`
-      )
-    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Valid Emails",
+        text: "No valid email addresses found for eligible students.",
+        confirmButtonColor: "#4F46E5",
+      });
       return;
     }
 
@@ -175,22 +247,95 @@ const AdminCVFilter: React.FC = () => {
         emails: emailsToSend,
       });
 
+      let resultMessage = `Successfully sent ${res.data.sentEmails.length} invitations!`;
+
       if (res.data.failedEmails.length > 0) {
-        alert(
-          `Successfully sent ${
-            res.data.sentEmails.length
-          } emails. Failed to send: ${res.data.failedEmails.join(", ")}`
-        );
-      } else {
-        alert(
-          `Successfully sent registration links to all ${res.data.sentEmails.length} eligible students!`
-        );
+        resultMessage += `<br><br>Failed to send: ${res.data.failedEmails
+          .map((f: any) => f.email)
+          .join(", ")}`;
       }
+
+      if (missingEmails.length > 0) {
+        resultMessage += `<br><br>Skipped (no email): ${missingEmails.join(
+          ", "
+        )}`;
+      }
+
+      Swal.fire({
+        icon: res.data.failedEmails.length > 0 ? "warning" : "success",
+        title:
+          res.data.failedEmails.length > 0 ? "Partial Success" : "Success!",
+        html: resultMessage,
+        confirmButtonColor: "#10B981",
+      });
     } catch (err: any) {
       console.error("Bulk Send Email Error:", err);
-      alert(err.response?.data?.message || "Failed to send bulk emails.");
+      Swal.fire({
+        icon: "error",
+        title: "Failed to Send",
+        text: err.response?.data?.message || "Failed to send bulk emails.",
+        confirmButtonColor: "#EF4444",
+      });
     } finally {
       setSendingBulk(false);
+    }
+  };
+
+  // Generate PDF Report
+  const handleGenerateReport = async () => {
+    if (results.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Data",
+        text: "No analysis results available to generate report.",
+        confirmButtonColor: "#4F46E5",
+      });
+      return;
+    }
+
+    setGeneratingReport(true);
+
+    try {
+      const response = await API.post(
+        "/admin/generate-report",
+        {
+          results,
+          threshold,
+          requirement,
+          emailInputs,
+        },
+        {
+          responseType: "blob", // Important for file download
+        }
+      );
+
+      // Create blob and download
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `cv-screening-report-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      Swal.fire({
+        icon: "success",
+        title: "Report Generated!",
+        text: "PDF report generated successfully!",
+        confirmButtonColor: "#10B981",
+      });
+    } catch (err: any) {
+      console.error("Report Generation Error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Generation Failed",
+        text: err.response?.data?.message || "Failed to generate PDF report.",
+        confirmButtonColor: "#EF4444",
+      });
+    } finally {
+      setGeneratingReport(false);
     }
   };
 
@@ -200,7 +345,7 @@ const AdminCVFilter: React.FC = () => {
     return emailRegex.test(email);
   };
 
-  // Get eligible results
+  // Get categorized results
   const eligibleResults = results.filter(
     (result) => result.eligible && !result.error
   );
@@ -209,19 +354,30 @@ const AdminCVFilter: React.FC = () => {
   );
   const errorResults = results.filter((result) => result.error);
 
+  // Get email status counts
+  const eligibleWithEmail = eligibleResults.filter(
+    (result) =>
+      emailInputs[result.fileName] && isValidEmail(emailInputs[result.fileName])
+  );
+  const eligibleWithoutEmail = eligibleResults.filter(
+    (result) =>
+      !emailInputs[result.fileName] ||
+      !isValidEmail(emailInputs[result.fileName])
+  );
+
   return (
     <div className="flex bg-[#F9FAFB] min-h-screen">
       <AdminSidebar />
       <div className="flex-1 flex flex-col md:ml-64">
         <main className="p-6 flex-grow max-w-6xl mx-auto w-full">
-          <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
-            CV Filter – Internship Eligibility (Multiple CVs)
+          <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
+            Internship Eligibility Checking
           </h1>
 
           {/* Upload & Requirement Section */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
             <label className="block font-medium mb-2 text-gray-700">
-              Upload CV Files (PDF, DOCX, TXT) - Multiple Selection
+              Upload CV Files (PDF, DOCX, TXT) - Up to 100 files
             </label>
             <input
               type="file"
@@ -352,15 +508,24 @@ const AdminCVFilter: React.FC = () => {
                 </h2>
                 <div className="flex gap-2">
                   {eligibleResults.length > 0 && (
-                    <button
-                      onClick={handleSendBulkEmails}
-                      disabled={sendingBulk}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
-                    >
-                      {sendingBulk
-                        ? "Sending..."
-                        : `Send All (${eligibleResults.length})`}
-                    </button>
+                    <>
+                      <button
+                        onClick={handleSendBulkEmails}
+                        disabled={sendingBulk}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                      >
+                        {sendingBulk
+                          ? "Sending..."
+                          : `Send All (${eligibleWithEmail.length})`}
+                      </button>
+                      <button
+                        onClick={handleGenerateReport}
+                        disabled={generatingReport}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                      >
+                        {generatingReport ? "Generating..." : "PDF Report"}
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={resetForm}
@@ -371,7 +536,7 @@ const AdminCVFilter: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                 <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-100">
                   <p className="text-2xl font-bold text-blue-600">
                     {results.length}
@@ -383,6 +548,12 @@ const AdminCVFilter: React.FC = () => {
                     {eligibleResults.length}
                   </p>
                   <p className="text-gray-600">Eligible</p>
+                </div>
+                <div className="bg-emerald-50 p-4 rounded-lg text-center border border-emerald-100">
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {eligibleWithEmail.length}
+                  </p>
+                  <p className="text-gray-600">With Email</p>
                 </div>
                 <div className="bg-red-50 p-4 rounded-lg text-center border border-red-100">
                   <p className="text-2xl font-bold text-red-600">
@@ -397,9 +568,23 @@ const AdminCVFilter: React.FC = () => {
                   <p className="text-gray-600">Threshold</p>
                 </div>
               </div>
+
+              {/* Email Status Summary */}
+              {eligibleWithoutEmail.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <span className="text-yellow-600 mr-2">⚠️</span>
+                    <p className="text-yellow-800 font-medium">
+                      {eligibleWithoutEmail.length} eligible candidate(s)
+                      missing email addresses
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
+          {/* Rest of the component remains the same */}
           {/* Eligible CVs Section */}
           {eligibleResults.length > 0 && (
             <div className="mb-6">
@@ -408,6 +593,10 @@ const AdminCVFilter: React.FC = () => {
                   ✅
                 </span>
                 Eligible Candidates ({eligibleResults.length})
+                <span className="ml-4 text-sm font-normal text-gray-600">
+                  {eligibleWithEmail.length} with email •{" "}
+                  {eligibleWithoutEmail.length} without email
+                </span>
               </h2>
               {eligibleResults.map((result, index) => (
                 <CVResultCard
@@ -417,7 +606,6 @@ const AdminCVFilter: React.FC = () => {
                   sendingEmails={sendingEmails}
                   onEmailChange={handleEmailChange}
                   onSendEmail={handleSendEmail}
-                  threshold={threshold}
                 />
               ))}
             </div>
@@ -440,7 +628,6 @@ const AdminCVFilter: React.FC = () => {
                   sendingEmails={sendingEmails}
                   onEmailChange={handleEmailChange}
                   onSendEmail={handleSendEmail}
-                  threshold={threshold}
                 />
               ))}
             </div>
@@ -480,21 +667,18 @@ const AdminCVFilter: React.FC = () => {
   );
 };
 
-// Separate component for CV result card
+// CVResultCard component remains the same as before
 const CVResultCard: React.FC<{
   result: CVResult;
   emailInputs: { [key: string]: string };
   sendingEmails: { [key: string]: boolean };
   onEmailChange: (fileName: string, email: string) => void;
   onSendEmail: (fileName: string) => void;
-  threshold: number;
-}> = ({
-  result,
-  emailInputs,
-  sendingEmails,
-  onEmailChange,
-  onSendEmail,
-}) => {
+}> = ({ result, emailInputs, sendingEmails, onEmailChange, onSendEmail }) => {
+  const hasValidEmail =
+    emailInputs[result.fileName] &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInputs[result.fileName]);
+
   return (
     <div className="bg-gray-50 border rounded-2xl p-6 mb-4">
       <div className="flex justify-between items-start mb-4">
@@ -514,6 +698,11 @@ const CVResultCard: React.FC<{
           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
             {result.matchScore}%
           </span>
+          {result.eligible && !hasValidEmail && (
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+              No Email
+            </span>
+          )}
         </div>
       </div>
 
@@ -551,35 +740,50 @@ const CVResultCard: React.FC<{
         )}
       </div>
 
-      {/* Email Section for Eligible CVs */}
-      {result.eligible && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <label className="block font-medium mb-2 text-gray-700">
-            Student Email
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={emailInputs[result.fileName] || ""}
-              onChange={(e) => onEmailChange(result.fileName, e.target.value)}
-              placeholder="student@example.com"
-              className="flex-1 border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button
-              onClick={() => onSendEmail(result.fileName)}
-              disabled={sendingEmails[result.fileName]}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50"
-            >
-              {sendingEmails[result.fileName] ? "Sending..." : "Send Link"}
-            </button>
-          </div>
-          {result.extractedEmail && (
-            <p className="text-sm text-gray-500 mt-1">
-              Extracted from CV: {result.extractedEmail}
-            </p>
-          )}
-        </div>
-      )}
+{/* Email Section for All CVs */}
+<div className="mt-4 pt-4 border-t border-gray-200">
+  <label className="block font-medium mb-2 text-gray-700">
+    Student Email{" "}
+    {!hasValidEmail && <span className="text-red-500">*</span>}
+  </label>
+  <div className="flex gap-2">
+    <input
+      type="email"
+      value={emailInputs[result.fileName] || ""}
+      onChange={(e) => onEmailChange(result.fileName, e.target.value)}
+      placeholder="student@example.com"
+      className={`flex-1 border rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+        !hasValidEmail ? "border-red-300" : "border-gray-300"
+      }`}
+    />
+    <button
+      onClick={() => onSendEmail(result.fileName)}
+      disabled={sendingEmails[result.fileName] || !hasValidEmail}
+      className={`bg-gradient-to-r hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50 ${
+        result.eligible 
+          ? "from-green-500 to-emerald-500" 
+          : "from-blue-500 to-cyan-500"
+      }`}
+    >
+      {sendingEmails[result.fileName] ? "Sending..." : "Send Link"}
+    </button>
+  </div>
+  {result.extractedEmail && (
+    <p className="text-sm text-gray-500 mt-1">
+      Extracted from CV: {result.extractedEmail}
+    </p>
+  )}
+  {!hasValidEmail && (
+    <p className="text-sm text-red-500 mt-1">
+      Please enter a valid email address to send invitation
+    </p>
+  )}
+  {!result.eligible && (
+    <p className="text-sm text-blue-500 mt-1">
+      Manual override: Sending platform registration link despite eligibility score
+    </p>
+  )}
+</div>
     </div>
   );
 };
