@@ -19,7 +19,11 @@ const AdminCVFilter: React.FC = () => {
   const [results, setResults] = useState<CVResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [emailInputs, setEmailInputs] = useState<{ [key: string]: string }>({});
-  const [sendingEmails, setSendingEmails] = useState<{ [key: string]: boolean }>({});
+  const [sendingEmails, setSendingEmails] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [threshold, setThreshold] = useState<number>(45); // Default threshold 45%
+  const [sendingBulk, setSendingBulk] = useState(false);
 
   // Handle multiple file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,10 +32,9 @@ const AdminCVFilter: React.FC = () => {
       setFiles(newFiles);
       // Reset previous results
       setResults([]);
-      
-      // Pre-fill email inputs with extracted emails (you'll need to extract them after analysis)
+
       const newEmailInputs: { [key: string]: string } = {};
-      newFiles.forEach(file => {
+      newFiles.forEach((file) => {
         newEmailInputs[file.name] = "";
       });
       setEmailInputs(newEmailInputs);
@@ -44,8 +47,10 @@ const AdminCVFilter: React.FC = () => {
     setFiles([]);
     setResults([]);
     setEmailInputs({});
-    // Reset file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    setThreshold(45);
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     if (fileInput) fileInput.value = "";
   };
 
@@ -61,10 +66,11 @@ const AdminCVFilter: React.FC = () => {
 
     try {
       const formData = new FormData();
-      files.forEach(file => {
+      files.forEach((file) => {
         formData.append("cvs", file);
       });
       formData.append("requirement", requirement);
+      formData.append("threshold", threshold.toString());
 
       const res = await API.post("/admin/cv-filter", formData, {
         headers: {
@@ -73,14 +79,13 @@ const AdminCVFilter: React.FC = () => {
       });
 
       setResults(res.data.results || []);
-      
+
       // Pre-fill email inputs with extracted emails
       const newEmailInputs: { [key: string]: string } = {};
       res.data.results.forEach((result: CVResult) => {
         newEmailInputs[result.fileName] = result.extractedEmail || "";
       });
       setEmailInputs(newEmailInputs);
-
     } catch (err: any) {
       console.error("CV Analysis Error:", err);
       alert(err.response?.data?.message || "⚠️ Failed to analyze CVs.");
@@ -91,22 +96,22 @@ const AdminCVFilter: React.FC = () => {
 
   // Handle email input change for specific CV
   const handleEmailChange = (fileName: string, email: string) => {
-    setEmailInputs(prev => ({
+    setEmailInputs((prev) => ({
       ...prev,
-      [fileName]: email
+      [fileName]: email,
     }));
   };
 
   // Send registration email for specific CV
   const handleSendEmail = async (fileName: string) => {
     const email = emailInputs[fileName];
-    
+
     if (!email.trim()) {
       alert("Please enter or verify the student's email address.");
       return;
     }
 
-    setSendingEmails(prev => ({ ...prev, [fileName]: true }));
+    setSendingEmails((prev) => ({ ...prev, [fileName]: true }));
 
     try {
       const res = await API.post("/admin/send-link", { email });
@@ -115,9 +120,94 @@ const AdminCVFilter: React.FC = () => {
       console.error("Send Email Error:", err);
       alert(err.response?.data?.message || "Failed to send email.");
     } finally {
-      setSendingEmails(prev => ({ ...prev, [fileName]: false }));
+      setSendingEmails((prev) => ({ ...prev, [fileName]: false }));
     }
   };
+
+  // Send bulk emails to all eligible students
+  const handleSendBulkEmails = async () => {
+    const eligibleResults = results.filter(
+      (result) => result.eligible && !result.error
+    );
+
+    if (eligibleResults.length === 0) {
+      alert("No eligible students found to send emails.");
+      return;
+    }
+
+    // Collect valid emails
+    const emailsToSend: string[] = [];
+    const invalidEmails: string[] = [];
+
+    eligibleResults.forEach((result) => {
+      const email = emailInputs[result.fileName]?.trim();
+      if (email && isValidEmail(email)) {
+        emailsToSend.push(email);
+      } else {
+        invalidEmails.push(result.fileName);
+      }
+    });
+
+    if (invalidEmails.length > 0) {
+      alert(
+        `Please enter valid email addresses for: ${invalidEmails.join(", ")}`
+      );
+      return;
+    }
+
+    if (emailsToSend.length === 0) {
+      alert("No valid email addresses found for eligible students.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Send registration links to ${emailsToSend.length} eligible students?`
+      )
+    ) {
+      return;
+    }
+
+    setSendingBulk(true);
+
+    try {
+      const res = await API.post("/admin/send-bulk-links", {
+        emails: emailsToSend,
+      });
+
+      if (res.data.failedEmails.length > 0) {
+        alert(
+          `Successfully sent ${
+            res.data.sentEmails.length
+          } emails. Failed to send: ${res.data.failedEmails.join(", ")}`
+        );
+      } else {
+        alert(
+          `Successfully sent registration links to all ${res.data.sentEmails.length} eligible students!`
+        );
+      }
+    } catch (err: any) {
+      console.error("Bulk Send Email Error:", err);
+      alert(err.response?.data?.message || "Failed to send bulk emails.");
+    } finally {
+      setSendingBulk(false);
+    }
+  };
+
+  // Email validation helper
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Get eligible results
+  const eligibleResults = results.filter(
+    (result) => result.eligible && !result.error
+  );
+  const notEligibleResults = results.filter(
+    (result) => !result.eligible && !result.error
+  );
+  const errorResults = results.filter((result) => result.error);
 
   return (
     <div className="flex bg-[#F9FAFB] min-h-screen">
@@ -140,7 +230,7 @@ const AdminCVFilter: React.FC = () => {
               onChange={handleFileChange}
               className="w-full border border-gray-300 rounded p-2 mb-4"
             />
-            
+
             {files.length > 0 && (
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">
@@ -163,8 +253,28 @@ const AdminCVFilter: React.FC = () => {
               value={requirement}
               onChange={(e) => setRequirement(e.target.value)}
               placeholder="Paste LinkedIn job post or company requirement here..."
-              className="w-full border border-gray-300 rounded p-3 h-32"
+              className="w-full border border-gray-300 rounded p-3 h-32 mb-4"
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block font-medium mb-2 text-gray-700">
+                  Eligibility Threshold (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={threshold}
+                  onChange={(e) => setThreshold(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded p-2"
+                  placeholder="Enter threshold percentage"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Minimum score required for eligibility (Default: 45%)
+                </p>
+              </div>
+            </div>
 
             <div className="flex gap-3 mt-4">
               <button
@@ -172,9 +282,11 @@ const AdminCVFilter: React.FC = () => {
                 disabled={loading}
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-6 py-2 rounded-xl shadow transition flex-1"
               >
-                {loading ? `Analyzing ${files.length} CV(s)...` : `Analyze ${files.length} CV(s)`}
+                {loading
+                  ? `Analyzing ${files.length} CV(s)...`
+                  : `Analyze ${files.length} CV(s)`}
               </button>
-              
+
               {(files.length > 0 || requirement) && (
                 <button
                   onClick={resetForm}
@@ -192,34 +304,37 @@ const AdminCVFilter: React.FC = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
                 <div className="text-center">
-                  {/* Animated Spinner */}
                   <div className="flex justify-center mb-4">
                     <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
                   </div>
-                  
-                  {/* Pulsing Text */}
+
                   <h3 className="text-xl font-semibold text-gray-800 mb-2 animate-pulse">
                     Analyzing CVs...
                   </h3>
-                  
-                  {/* Progress Dots */}
+
                   <div className="flex justify-center space-x-2 mb-4">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
                   </div>
-                  
-                  {/* File Count */}
+
                   <p className="text-gray-600 mb-2">
-                    Processing {files.length} CV{files.length > 1 ? 's' : ''}
+                    Processing {files.length} CV{files.length > 1 ? "s" : ""}
                   </p>
-                  
-                  {/* Progress Message */}
+
                   <p className="text-sm text-gray-500">
                     This may take a few moments depending on file sizes...
                   </p>
-                  
-                  {/* Progress Bar */}
+
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
                     <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full animate-pulse"></div>
                   </div>
@@ -235,133 +350,236 @@ const AdminCVFilter: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-800">
                   Analysis Summary
                 </h2>
-                <button
-                  onClick={resetForm}
-                  className="bg-gradient-to-r from-gray-500 to-gray-600 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm"
-                >
-                  New Analysis
-                </button>
+                <div className="flex gap-2">
+                  {eligibleResults.length > 0 && (
+                    <button
+                      onClick={handleSendBulkEmails}
+                      disabled={sendingBulk}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                    >
+                      {sendingBulk
+                        ? "Sending..."
+                        : `Send All (${eligibleResults.length})`}
+                    </button>
+                  )}
+                  <button
+                    onClick={resetForm}
+                    className="bg-gradient-to-r from-gray-500 to-gray-600 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm"
+                  >
+                    New Analysis
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-100">
-                  <p className="text-2xl font-bold text-blue-600">{results.length}</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {results.length}
+                  </p>
                   <p className="text-gray-600">Total Analyzed</p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg text-center border border-green-100">
                   <p className="text-2xl font-bold text-green-600">
-                    {results.filter(r => r.eligible).length}
+                    {eligibleResults.length}
                   </p>
                   <p className="text-gray-600">Eligible</p>
                 </div>
                 <div className="bg-red-50 p-4 rounded-lg text-center border border-red-100">
                   <p className="text-2xl font-bold text-red-600">
-                    {results.filter(r => !r.eligible).length}
+                    {notEligibleResults.length}
                   </p>
                   <p className="text-gray-600">Not Eligible</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg text-center border border-yellow-100">
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {threshold}%
+                  </p>
+                  <p className="text-gray-600">Threshold</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Individual CV Results */}
-          {results.map((result, index) => (
-            <div key={index} className="bg-gray-50 border rounded-2xl p-6 mb-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {result.fileName}
-                </h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  result.eligible 
-                    ? 'bg-green-100 text-green-800 border border-green-200' 
-                    : 'bg-red-100 text-red-800 border border-red-200'
-                }`}>
-                  {result.eligible ? 'Eligible' : 'Not Eligible'}
+          {/* Eligible CVs Section */}
+          {eligibleResults.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-green-600 mb-4 flex items-center">
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-lg mr-2">
+                  ✅
                 </span>
-              </div>
-
-              {result.error ? (
-                <p className="text-red-600 mb-4">{result.error}</p>
-              ) : (
-                <>
-                  <p className="text-lg text-gray-700 mb-2">
-                    Match Score:{" "}
-                    <span
-                      className={`font-bold ${
-                        result.matchScore >= 75 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {result.matchScore}%
-                    </span>
-                  </p>
-
-                  {/* Matching Requirements */}
-                  {result.matchingRequirements.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-md font-semibold text-green-600 mb-2">
-                        ✅ Matching Requirements:
-                      </h4>
-                      <ul className="list-disc list-inside space-y-1">
-                        {result.matchingRequirements.map((req, reqIndex) => (
-                          <li key={reqIndex} className="text-gray-700 text-sm">
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Missing Requirements */}
-                  {result.missingRequirements.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-md font-semibold text-red-600 mb-2">
-                        ❌ Missing Requirements:
-                      </h4>
-                      <ul className="list-disc list-inside space-y-1">
-                        {result.missingRequirements.map((req, reqIndex) => (
-                          <li key={reqIndex} className="text-gray-700 text-sm">
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Email Section for Eligible CVs */}
-                  {result.eligible && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <label className="block font-medium mb-2 text-gray-700">
-                        Student Email
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="email"
-                          value={emailInputs[result.fileName] || ""}
-                          onChange={(e) => handleEmailChange(result.fileName, e.target.value)}
-                          placeholder="student@example.com"
-                          className="flex-1 border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        <button
-                          onClick={() => handleSendEmail(result.fileName)}
-                          disabled={sendingEmails[result.fileName]}
-                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50"
-                        >
-                          {sendingEmails[result.fileName] ? "Sending..." : "Send Link"}
-                        </button>
-                      </div>
-                      {result.extractedEmail && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          Extracted from CV: {result.extractedEmail}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
+                Eligible Candidates ({eligibleResults.length})
+              </h2>
+              {eligibleResults.map((result, index) => (
+                <CVResultCard
+                  key={index}
+                  result={result}
+                  emailInputs={emailInputs}
+                  sendingEmails={sendingEmails}
+                  onEmailChange={handleEmailChange}
+                  onSendEmail={handleSendEmail}
+                  threshold={threshold}
+                />
+              ))}
             </div>
-          ))}
+          )}
+
+          {/* Not Eligible CVs Section */}
+          {notEligibleResults.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-red-600 mb-4 flex items-center">
+                <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-lg mr-2">
+                  ❌
+                </span>
+                Not Eligible Candidates ({notEligibleResults.length})
+              </h2>
+              {notEligibleResults.map((result, index) => (
+                <CVResultCard
+                  key={index}
+                  result={result}
+                  emailInputs={emailInputs}
+                  sendingEmails={sendingEmails}
+                  onEmailChange={handleEmailChange}
+                  onSendEmail={handleSendEmail}
+                  threshold={threshold}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Error CVs Section */}
+          {errorResults.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-yellow-600 mb-4 flex items-center">
+                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-lg mr-2">
+                  ⚠️
+                </span>
+                Failed Analysis ({errorResults.length})
+              </h2>
+              {errorResults.map((result, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 border rounded-2xl p-6 mb-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {result.fileName}
+                    </h3>
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      Analysis Failed
+                    </span>
+                  </div>
+                  <p className="text-red-600 mt-2">{result.error}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </main>
         <AdminFooter />
       </div>
+    </div>
+  );
+};
+
+// Separate component for CV result card
+const CVResultCard: React.FC<{
+  result: CVResult;
+  emailInputs: { [key: string]: string };
+  sendingEmails: { [key: string]: boolean };
+  onEmailChange: (fileName: string, email: string) => void;
+  onSendEmail: (fileName: string) => void;
+  threshold: number;
+}> = ({
+  result,
+  emailInputs,
+  sendingEmails,
+  onEmailChange,
+  onSendEmail,
+}) => {
+  return (
+    <div className="bg-gray-50 border rounded-2xl p-6 mb-4">
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">
+          {result.fileName}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              result.eligible
+                ? "bg-green-100 text-green-800 border border-green-200"
+                : "bg-red-100 text-red-800 border border-red-200"
+            }`}
+          >
+            {result.eligible ? "Eligible" : "Not Eligible"}
+          </span>
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            {result.matchScore}%
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* Matching Requirements */}
+        {result.matchingRequirements.length > 0 && (
+          <div>
+            <h4 className="text-md font-semibold text-green-600 mb-2">
+              ✅ Matching Requirements:
+            </h4>
+            <ul className="list-disc list-inside space-y-1">
+              {result.matchingRequirements.map((req, reqIndex) => (
+                <li key={reqIndex} className="text-gray-700 text-sm">
+                  {req}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Missing Requirements */}
+        {result.missingRequirements.length > 0 && (
+          <div>
+            <h4 className="text-md font-semibold text-red-600 mb-2">
+              ❌ Missing Requirements:
+            </h4>
+            <ul className="list-disc list-inside space-y-1">
+              {result.missingRequirements.map((req, reqIndex) => (
+                <li key={reqIndex} className="text-gray-700 text-sm">
+                  {req}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Email Section for Eligible CVs */}
+      {result.eligible && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <label className="block font-medium mb-2 text-gray-700">
+            Student Email
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={emailInputs[result.fileName] || ""}
+              onChange={(e) => onEmailChange(result.fileName, e.target.value)}
+              placeholder="student@example.com"
+              className="flex-1 border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              onClick={() => onSendEmail(result.fileName)}
+              disabled={sendingEmails[result.fileName]}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50"
+            >
+              {sendingEmails[result.fileName] ? "Sending..." : "Send Link"}
+            </button>
+          </div>
+          {result.extractedEmail && (
+            <p className="text-sm text-gray-500 mt-1">
+              Extracted from CV: {result.extractedEmail}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
