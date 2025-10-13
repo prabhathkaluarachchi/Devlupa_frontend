@@ -98,7 +98,9 @@ const AssignmentList: React.FC = () => {
                       src={
                         a.imageUrl.startsWith("http")
                           ? a.imageUrl
-                          : `${import.meta.env.VITE_BACKEND_BASE_URL}${a.imageUrl}`
+                          : `${import.meta.env.VITE_BACKEND_BASE_URL}${
+                              a.imageUrl
+                            }`
                       }
                       alt={a.title}
                       className="rounded-xl mb-4 object-cover h-40 w-full"
@@ -114,7 +116,7 @@ const AssignmentList: React.FC = () => {
                     <p className="text-gray-500 mb-4">
                       Due: {new Date(a.dueDate).toLocaleDateString()}
                     </p>
-                  )} 
+                  )}
                   <button
                     onClick={() => navigate(`/assignments/${a._id}/attempt`)}
                     className="mt-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl shadow transition"
