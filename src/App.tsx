@@ -22,6 +22,8 @@ import AssignmentList from "./pages/student/AssignmentList";
 import AdminManageUsers from "./pages/admin/AdminManageUsers";
 import GradeAssignment from "./pages/admin/GradeAssignment";
 import AdminCVfilter from "./pages/admin/AdminCVfilter";
+import AdminCVHistory from "./pages/admin/AdminCVHistory";
+import AdminCVScreeningDetails from "./pages/admin/AdminCVScreeningDetails";
 
 const App: React.FC = () => {
   return (
@@ -89,6 +91,23 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute role="admin">
               <AdminCVfilter />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/cv-history"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminCVHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/cv-screening/:screeningId"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminCVScreeningDetails />
             </ProtectedRoute>
           }
         />

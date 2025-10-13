@@ -12,6 +12,7 @@ interface CVResult {
   extractedEmail: string | null;
   eligible: boolean;
   error?: string;
+  cvFileId?: string;
 }
 
 const AdminCVFilter: React.FC = () => {
@@ -20,12 +21,11 @@ const AdminCVFilter: React.FC = () => {
   const [results, setResults] = useState<CVResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [emailInputs, setEmailInputs] = useState<{ [key: string]: string }>({});
-  const [sendingEmails, setSendingEmails] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [sendingEmails, setSendingEmails] = useState<{ [key: string]: boolean }>({});
   const [threshold, setThreshold] = useState<number>(45);
   const [sendingBulk, setSendingBulk] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [screeningId, setScreeningId] = useState<string | null>(null);
 
   // Handle multiple file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,6 +33,7 @@ const AdminCVFilter: React.FC = () => {
       const newFiles = Array.from(e.target.files);
       setFiles(newFiles);
       setResults([]);
+      setScreeningId(null);
 
       const newEmailInputs: { [key: string]: string } = {};
       newFiles.forEach((file) => {
@@ -49,9 +50,8 @@ const AdminCVFilter: React.FC = () => {
     setResults([]);
     setEmailInputs({});
     setThreshold(45);
-    const fileInput = document.querySelector(
-      'input[type="file"]'
-    ) as HTMLInputElement;
+    setScreeningId(null);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) fileInput.value = "";
   };
 
@@ -69,6 +69,7 @@ const AdminCVFilter: React.FC = () => {
 
     setLoading(true);
     setResults([]);
+    setScreeningId(null);
 
     try {
       const formData = new FormData();
@@ -85,6 +86,7 @@ const AdminCVFilter: React.FC = () => {
       });
 
       setResults(res.data.results || []);
+      setScreeningId(res.data.screeningId);
 
       const newEmailInputs: { [key: string]: string } = {};
       res.data.results.forEach((result: CVResult) => {
@@ -139,7 +141,11 @@ const AdminCVFilter: React.FC = () => {
     setSendingEmails((prev) => ({ ...prev, [fileName]: true }));
 
     try {
-      const res = await API.post("/admin/send-link", { email });
+      const res = await API.post("/admin/send-link", { 
+        email, 
+        screeningId, 
+        fileName 
+      });
       Swal.fire({
         icon: "success",
         title: "Email Sent!",
@@ -159,6 +165,14 @@ const AdminCVFilter: React.FC = () => {
     }
   };
 
+  // Helper function to get fileName by email
+  const getFileNameByEmail = (email: string) => {
+    const entry = Object.entries(emailInputs).find(([fileName, emailValue]) => 
+      emailValue === email
+    );
+    return entry ? entry[0] : '';
+  };
+
   // Send bulk emails to all eligible students
   const handleSendBulkEmails = async () => {
     const eligibleResults = results.filter(
@@ -175,15 +189,15 @@ const AdminCVFilter: React.FC = () => {
       return;
     }
 
-    // Collect valid emails
-    const emailsToSend: string[] = [];
+    // Collect valid emails with file names
+    const emailsToSend: Array<{email: string, fileName: string}> = [];
     const missingEmails: string[] = [];
     const invalidEmails: string[] = [];
 
     eligibleResults.forEach((result) => {
       const email = emailInputs[result.fileName]?.trim();
       if (email && isValidEmail(email)) {
-        emailsToSend.push(email);
+        emailsToSend.push({ email, fileName: result.fileName });
       } else if (!email) {
         missingEmails.push(result.fileName);
       } else {
@@ -245,6 +259,7 @@ const AdminCVFilter: React.FC = () => {
     try {
       const res = await API.post("/admin/send-bulk-links", {
         emails: emailsToSend,
+        screeningId
       });
 
       let resultMessage = `Successfully sent ${res.data.sentEmails.length} invitations!`;
@@ -256,15 +271,12 @@ const AdminCVFilter: React.FC = () => {
       }
 
       if (missingEmails.length > 0) {
-        resultMessage += `<br><br>Skipped (no email): ${missingEmails.join(
-          ", "
-        )}`;
+        resultMessage += `<br><br>Skipped (no email): ${missingEmails.join(", ")}`;
       }
 
       Swal.fire({
         icon: res.data.failedEmails.length > 0 ? "warning" : "success",
-        title:
-          res.data.failedEmails.length > 0 ? "Partial Success" : "Success!",
+        title: res.data.failedEmails.length > 0 ? "Partial Success" : "Success!",
         html: resultMessage,
         confirmButtonColor: "#10B981",
       });
@@ -305,11 +317,10 @@ const AdminCVFilter: React.FC = () => {
           emailInputs,
         },
         {
-          responseType: "blob", // Important for file download
+          responseType: "blob",
         }
       );
 
-      // Create blob and download
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -370,9 +381,17 @@ const AdminCVFilter: React.FC = () => {
       <AdminSidebar />
       <div className="flex-1 flex flex-col md:ml-64">
         <main className="p-6 flex-grow max-w-6xl mx-auto w-full">
-          <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
-            Internship Eligibility Checking
-          </h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-extrabold text-[#4F46E5]">
+              Internship Eligibility Checking
+            </h1>
+            <a 
+              href="/admin/cv-history" 
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
+            >
+              View History
+            </a>
+          </div>
 
           {/* Upload & Requirement Section */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
@@ -584,7 +603,6 @@ const AdminCVFilter: React.FC = () => {
             </div>
           )}
 
-          {/* Rest of the component remains the same */}
           {/* Eligible CVs Section */}
           {eligibleResults.length > 0 && (
             <div className="mb-6">
@@ -667,7 +685,7 @@ const AdminCVFilter: React.FC = () => {
   );
 };
 
-// CVResultCard component remains the same as before
+// CVResultCard component
 const CVResultCard: React.FC<{
   result: CVResult;
   emailInputs: { [key: string]: string };
@@ -740,50 +758,50 @@ const CVResultCard: React.FC<{
         )}
       </div>
 
-{/* Email Section for All CVs */}
-<div className="mt-4 pt-4 border-t border-gray-200">
-  <label className="block font-medium mb-2 text-gray-700">
-    Student Email{" "}
-    {!hasValidEmail && <span className="text-red-500">*</span>}
-  </label>
-  <div className="flex gap-2">
-    <input
-      type="email"
-      value={emailInputs[result.fileName] || ""}
-      onChange={(e) => onEmailChange(result.fileName, e.target.value)}
-      placeholder="student@example.com"
-      className={`flex-1 border rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-        !hasValidEmail ? "border-red-300" : "border-gray-300"
-      }`}
-    />
-    <button
-      onClick={() => onSendEmail(result.fileName)}
-      disabled={sendingEmails[result.fileName] || !hasValidEmail}
-      className={`bg-gradient-to-r hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50 ${
-        result.eligible 
-          ? "from-green-500 to-emerald-500" 
-          : "from-blue-500 to-cyan-500"
-      }`}
-    >
-      {sendingEmails[result.fileName] ? "Sending..." : "Send Link"}
-    </button>
-  </div>
-  {result.extractedEmail && (
-    <p className="text-sm text-gray-500 mt-1">
-      Extracted from CV: {result.extractedEmail}
-    </p>
-  )}
-  {!hasValidEmail && (
-    <p className="text-sm text-red-500 mt-1">
-      Please enter a valid email address to send invitation
-    </p>
-  )}
-  {!result.eligible && (
-    <p className="text-sm text-blue-500 mt-1">
-      Manual override: Sending platform registration link despite eligibility score
-    </p>
-  )}
-</div>
+      {/* Email Section for All CVs */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <label className="block font-medium mb-2 text-gray-700">
+          Student Email{" "}
+          {!hasValidEmail && <span className="text-red-500">*</span>}
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={emailInputs[result.fileName] || ""}
+            onChange={(e) => onEmailChange(result.fileName, e.target.value)}
+            placeholder="student@example.com"
+            className={`flex-1 border rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              !hasValidEmail ? "border-red-300" : "border-gray-300"
+            }`}
+          />
+          <button
+            onClick={() => onSendEmail(result.fileName)}
+            disabled={sendingEmails[result.fileName] || !hasValidEmail}
+            className={`bg-gradient-to-r hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50 ${
+              result.eligible 
+                ? "from-green-500 to-emerald-500" 
+                : "from-blue-500 to-cyan-500"
+            }`}
+          >
+            {sendingEmails[result.fileName] ? "Sending..." : "Send Link"}
+          </button>
+        </div>
+        {result.extractedEmail && (
+          <p className="text-sm text-gray-500 mt-1">
+            Extracted from CV: {result.extractedEmail}
+          </p>
+        )}
+        {!hasValidEmail && (
+          <p className="text-sm text-red-500 mt-1">
+            Please enter a valid email address to send invitation
+          </p>
+        )}
+        {!result.eligible && (
+          <p className="text-sm text-blue-500 mt-1">
+            Manual override: Sending platform registration link despite eligibility score
+          </p>
+        )}
+      </div>
     </div>
   );
 };
