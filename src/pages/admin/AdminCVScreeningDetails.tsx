@@ -175,7 +175,7 @@ const AdminCVScreeningDetails: React.FC = () => {
               <h2 className="text-2xl font-bold text-green-600 mb-4">
                 ✅ Eligible Candidates ({eligibleResults.length})
               </h2>
-              {eligibleResults.map((result, index) => (
+              {eligibleResults.map((result) => (
                 <CVResultCard 
                   key={result._id} 
                   result={result} 
@@ -190,7 +190,7 @@ const AdminCVScreeningDetails: React.FC = () => {
               <h2 className="text-2xl font-bold text-red-600 mb-4">
                 ❌ Not Eligible Candidates ({notEligibleResults.length})
               </h2>
-              {notEligibleResults.map((result, index) => (
+              {notEligibleResults.map((result) => (
                 <CVResultCard 
                   key={result._id} 
                   result={result} 
@@ -205,7 +205,7 @@ const AdminCVScreeningDetails: React.FC = () => {
               <h2 className="text-2xl font-bold text-yellow-600 mb-4">
                 ⚠️ Analysis Errors ({errorResults.length})
               </h2>
-              {errorResults.map((result, index) => (
+              {errorResults.map((result) => (
                 <div key={result._id} className="bg-gray-50 border rounded-2xl p-6 mb-4">
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg font-semibold text-gray-800">

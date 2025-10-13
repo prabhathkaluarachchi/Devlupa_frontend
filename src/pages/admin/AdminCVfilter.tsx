@@ -165,13 +165,13 @@ const AdminCVFilter: React.FC = () => {
     }
   };
 
-  // Helper function to get fileName by email
-  const getFileNameByEmail = (email: string) => {
-    const entry = Object.entries(emailInputs).find(([fileName, emailValue]) => 
-      emailValue === email
-    );
-    return entry ? entry[0] : '';
-  };
+  // // Helper function to get fileName by email
+  // const getFileNameByEmail = (email: string) => {
+  //   const entry = Object.entries(emailInputs).find(([fileName, emailValue]) => 
+  //     emailValue === email
+  //   );
+  //   return entry ? entry[0] : '';
+  // };
 
   // Send bulk emails to all eligible students
   const handleSendBulkEmails = async () => {
