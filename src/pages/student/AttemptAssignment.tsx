@@ -125,7 +125,7 @@ const AttemptAssignment: React.FC = () => {
                 src={
                   assignment.imageUrl.startsWith("http")
                     ? assignment.imageUrl
-                    : `http://localhost:5000${assignment.imageUrl}`
+                    : `${import.meta.env.VITE_BACKEND_BASE_URL}${assignment.imageUrl}`
                 }
                 alt={assignment.title}
                 className="mb-6 rounded-lg shadow-md max-h-80 w-full object-cover"
@@ -155,7 +155,7 @@ const AttemptAssignment: React.FC = () => {
 
                 {assignment.studentSubmission?.fileUrl && (
                   <a
-                    href={`http://localhost:5000${assignment.studentSubmission.fileUrl}`}
+                    href={`${import.meta.env.VITE_BACKEND_BASE_URL}${assignment.studentSubmission.fileUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 font-medium underline"

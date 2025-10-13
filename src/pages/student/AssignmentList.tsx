@@ -98,7 +98,7 @@ const AssignmentList: React.FC = () => {
                       src={
                         a.imageUrl.startsWith("http")
                           ? a.imageUrl
-                          : `http://localhost:5000${a.imageUrl}`
+                          : `${import.meta.env.VITE_BACKEND_BASE_URL}${a.imageUrl}`
                       }
                       alt={a.title}
                       className="rounded-xl mb-4 object-cover h-40 w-full"

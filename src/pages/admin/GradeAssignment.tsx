@@ -97,7 +97,7 @@ const GradeAssignment: React.FC = () => {
               <div className="mb-4">
                 <h4 className="font-medium mb-1">Uploaded File:</h4>
                 <a
-                  href={`http://localhost:5000${submission.fileUrl}`}
+                  href={`${import.meta.env.VITE_BACKEND_BASE_URL}${submission.fileUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 underline"
