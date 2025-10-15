@@ -86,9 +86,9 @@ const StudentSidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile toggle button */}
+      {/* Mobile toggle button - Previous style */}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-md bg-white shadow-md"
         onClick={() => setIsOpen((prev) => !prev)}
       >
         {isOpen ? (
@@ -100,9 +100,9 @@ const StudentSidebar: React.FC = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-[#e0f0ff] shadow-lg z-40 transform transition-transform duration-300
-        w-64 flex flex-col border-r border-gray-200
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed top-0 md:left-0 right-0 h-full bg-[#e0f0ff] shadow-lg z-40 transform transition-transform duration-300
+          w-64 flex flex-col border-l border-gray-200
+          ${isOpen ? "translate-x-0" : "translate-x-full"} md:translate-x-0`}
       >
         {/* Logo + User Profile */}
         <div className="flex flex-col items-center justify-center border-b p-4 text-center">

@@ -128,7 +128,7 @@ const AttemptAssignment: React.FC = () => {
                     : `${import.meta.env.VITE_BACKEND_BASE_URL}${assignment.imageUrl}`
                 }
                 alt={assignment.title}
-                className="mb-6 rounded-lg shadow-md max-h-80 w-full object-cover"
+                className="mb-6 rounded-lg shadow-md max-h-80 w-full object-contain"
               />
             )}
 

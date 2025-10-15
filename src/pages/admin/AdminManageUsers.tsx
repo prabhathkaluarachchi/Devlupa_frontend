@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import API from "../../utils/axiosInstance";
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminFooter from "../../components/AdminFooter";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface UserRow {
   _id: string;
@@ -26,11 +28,30 @@ interface CertificateData {
   supervisorTitle: string;
 }
 
+// Progress interfaces
+interface CourseProgress {
+  courseId: string;
+  completedCount: number;
+  totalVideos: number;
+  percentage: number;
+  courseTitle: string;
+}
+
+interface UserProgress {
+  _id: string;
+  name: string;
+  progress: CourseProgress[];
+}
+
 const AdminManageUsers = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCertificatePopup, setShowCertificatePopup] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
+  const [selectedUserForProgress, setSelectedUserForProgress] =
+    useState<UserProgress | null>(null);
+  const [selectedUserForCertificate, setSelectedUserForCertificate] =
+    useState<UserRow | null>(null);
   const [certificateData, setCertificateData] = useState<CertificateData>({
     studentName: "",
     companyName: "DevLupa",
@@ -44,6 +65,15 @@ const AdminManageUsers = () => {
   });
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Progress states
+  const [userProgressList, setUserProgressList] = useState<UserProgress[]>([]);
+  const [quizProgressMap, setQuizProgressMap] = useState<Map<string, any>>(
+    new Map()
+  );
+  const [assignmentProgressMap, setAssignmentProgressMap] = useState<
+    Map<string, any>
+  >(new Map());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,6 +89,19 @@ const AdminManageUsers = () => {
         const quizData = quizRes.data;
         const assignmentData = assignmentRes.data;
         const userList = userRes.data;
+
+        // Set progress data for detailed view
+        setUserProgressList(courseData);
+
+        const quizMap = new Map();
+        quizData.forEach((qp: any) => quizMap.set(qp.userId, qp));
+        setQuizProgressMap(quizMap);
+
+        const assignmentMap = new Map();
+        assignmentData.forEach((ap: any) =>
+          assignmentMap.set(ap.userId, ap.assignments)
+        );
+        setAssignmentProgressMap(assignmentMap);
 
         const mergedUsers: UserRow[] = courseData.map((user: any) => {
           const userInfo = userList.find((u: any) => u._id === user._id);
@@ -119,10 +162,10 @@ const AdminManageUsers = () => {
       } catch (err) {
         console.error("Failed to load users", err);
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to load users data',
-          confirmButtonColor: '#4F46E5',
+          icon: "error",
+          title: "Error",
+          text: "Failed to load users data",
+          confirmButtonColor: "#4F46E5",
         });
       } finally {
         setLoading(false);
@@ -134,14 +177,14 @@ const AdminManageUsers = () => {
 
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
+      title: "Are you sure?",
       text: "You won't be able to revert this!",
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
     });
 
     if (result.isConfirmed) {
@@ -149,25 +192,25 @@ const AdminManageUsers = () => {
         await API.delete(`/users/${id}`);
         setUsers(users.filter((u) => u._id !== id));
         Swal.fire({
-          icon: 'success',
-          title: 'Deleted!',
-          text: 'User has been deleted successfully.',
-          confirmButtonColor: '#4F46E5',
+          icon: "success",
+          title: "Deleted!",
+          text: "User has been deleted successfully.",
+          confirmButtonColor: "#4F46E5",
         });
       } catch (err) {
         console.error(err);
         Swal.fire({
-          icon: 'error',
-          title: 'Error!',
-          text: 'Failed to delete user.',
-          confirmButtonColor: '#4F46E5',
+          icon: "error",
+          title: "Error!",
+          text: "Failed to delete user.",
+          confirmButtonColor: "#4F46E5",
         });
       }
     }
   };
 
   const handleOfferCertificate = (user: UserRow) => {
-    setSelectedUser(user);
+    setSelectedUserForCertificate(user);
     setCertificateData((prev) => ({
       ...prev,
       studentName: user.name,
@@ -175,6 +218,97 @@ const AdminManageUsers = () => {
     }));
     setShowCertificatePopup(true);
   };
+
+  const handleViewProgress = (user: UserRow) => {
+    const userProgress = userProgressList.find((u) => u._id === user._id);
+    if (userProgress) {
+      setSelectedUserForProgress(
+        selectedUserForProgress && selectedUserForProgress._id === user._id
+          ? null
+          : userProgress
+      );
+    }
+  };
+
+  // Progress Cards Component
+  const ProgressCards = ({ user }: { user: UserRow }) => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#1F2937]">
+            Course Progress
+          </h3>
+          <span className="text-2xl font-bold text-[#4F46E5]">
+            {user.coursePercentage}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+          <div
+            className="h-3 rounded-full transition-all"
+            style={{
+              width: `${user.coursePercentage}%`,
+              backgroundColor:
+                user.coursePercentage >= 80
+                  ? "#16a34a"
+                  : user.coursePercentage >= 50
+                  ? "#facc15"
+                  : "#ef4444",
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#1F2937]">
+            Quiz Progress
+          </h3>
+          <span className="text-2xl font-bold text-[#4F46E5]">
+            {user.quizPercentage}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+          <div
+            className="h-3 rounded-full transition-all"
+            style={{
+              width: `${user.quizPercentage}%`,
+              backgroundColor:
+                user.quizPercentage >= 80
+                  ? "#16a34a"
+                  : user.quizPercentage >= 50
+                  ? "#facc15"
+                  : "#ef4444",
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#1F2937]">
+            Assignment Progress
+          </h3>
+          <span className="text-2xl font-bold text-[#4F46E5]">
+            {user.assignmentPercentage}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+          <div
+            className="h-3 rounded-full transition-all"
+            style={{
+              width: `${user.assignmentPercentage}%`,
+              backgroundColor:
+                user.assignmentPercentage >= 80
+                  ? "#16a34a"
+                  : user.assignmentPercentage >= 50
+                  ? "#facc15"
+                  : "#ef4444",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 
   // Separate CertificatePopup component to prevent re-renders of the main component
   const CertificatePopup = () => {
@@ -198,42 +332,45 @@ const AdminManageUsers = () => {
 
     const validateForm = (): boolean => {
       const requiredFields = [
-        'studentName',
-        'companyName', 
-        'internshipField',
-        'startDate',
-        'endDate',
-        'completionDate',
-        'supervisorName',
-        'supervisorTitle',
-        'companyDetails'
+        "studentName",
+        "companyName",
+        "internshipField",
+        "startDate",
+        "endDate",
+        "completionDate",
+        "supervisorName",
+        "supervisorTitle",
+        "companyDetails",
       ];
 
-      const missingFields = requiredFields.filter(field => 
-        !localCertificateData[field as keyof CertificateData] || 
-        localCertificateData[field as keyof CertificateData] === ''
+      const missingFields = requiredFields.filter(
+        (field) =>
+          !localCertificateData[field as keyof CertificateData] ||
+          localCertificateData[field as keyof CertificateData] === ""
       );
 
       if (missingFields.length > 0) {
         const fieldNames: { [key: string]: string } = {
-          studentName: 'Student Name',
-          companyName: 'Company Name',
-          internshipField: 'Internship Field',
-          startDate: 'Start Date',
-          endDate: 'End Date',
-          completionDate: 'Completion Date',
-          supervisorName: 'Supervisor Name',
-          supervisorTitle: 'Supervisor Title',
-          companyDetails: 'Company Details'
+          studentName: "Student Name",
+          companyName: "Company Name",
+          internshipField: "Internship Field",
+          startDate: "Start Date",
+          endDate: "End Date",
+          completionDate: "Completion Date",
+          supervisorName: "Supervisor Name",
+          supervisorTitle: "Supervisor Title",
+          companyDetails: "Company Details",
         };
 
-        const missingFieldNames = missingFields.map(field => fieldNames[field]).join(', ');
-        
+        const missingFieldNames = missingFields
+          .map((field) => fieldNames[field])
+          .join(", ");
+
         Swal.fire({
-          icon: 'warning',
-          title: 'Missing Information',
+          icon: "warning",
+          title: "Missing Information",
           html: `Please fill in all required fields:<br><strong>${missingFieldNames}</strong>`,
-          confirmButtonColor: '#4F46E5',
+          confirmButtonColor: "#4F46E5",
         });
         return false;
       }
@@ -241,13 +378,13 @@ const AdminManageUsers = () => {
       // Validate dates
       const startDate = new Date(localCertificateData.startDate);
       const endDate = new Date(localCertificateData.endDate);
-      
+
       if (startDate > endDate) {
         Swal.fire({
-          icon: 'error',
-          title: 'Invalid Dates',
-          text: 'Start date cannot be after end date',
-          confirmButtonColor: '#4F46E5',
+          icon: "error",
+          title: "Invalid Dates",
+          text: "Start date cannot be after end date",
+          confirmButtonColor: "#4F46E5",
         });
         return false;
       }
@@ -256,7 +393,7 @@ const AdminManageUsers = () => {
     };
 
     const handleLocalSendEmail = async () => {
-      if (!selectedUser) return;
+      if (!selectedUserForCertificate) return;
 
       // Validate form before sending
       if (!validateForm()) {
@@ -266,16 +403,16 @@ const AdminManageUsers = () => {
       setSendingEmail(true);
       try {
         const response = await API.post("/admin/send-certificate", {
-          userEmail: selectedUser.email,
+          userEmail: selectedUserForCertificate.email,
           certificateData: localCertificateData,
         });
 
         if (response.data.success) {
           await Swal.fire({
-            icon: 'success',
-            title: 'Certificate Sent!',
-            text: `Certificate has been sent successfully to ${selectedUser.email}`,
-            confirmButtonColor: '#4F46E5',
+            icon: "success",
+            title: "Certificate Sent!",
+            text: `Certificate has been sent successfully to ${selectedUserForCertificate.email}`,
+            confirmButtonColor: "#4F46E5",
           });
           setShowCertificatePopup(false);
           setCertificateData(localCertificateData);
@@ -283,10 +420,10 @@ const AdminManageUsers = () => {
       } catch (error) {
         console.error("Error sending email:", error);
         await Swal.fire({
-          icon: 'error',
-          title: 'Failed to Send',
-          text: 'Error sending certificate email. Please try again.',
-          confirmButtonColor: '#4F46E5',
+          icon: "error",
+          title: "Failed to Send",
+          text: "Error sending certificate email. Please try again.",
+          confirmButtonColor: "#4F46E5",
         });
       } finally {
         setSendingEmail(false);
@@ -437,27 +574,27 @@ const AdminManageUsers = () => {
         URL.revokeObjectURL(url);
 
         await Swal.fire({
-          icon: 'success',
-          title: 'Certificate Downloaded!',
-          text: 'Certificate has been downloaded successfully',
-          confirmButtonColor: '#4F46E5',
+          icon: "success",
+          title: "Certificate Downloaded!",
+          text: "Certificate has been downloaded successfully",
+          confirmButtonColor: "#4F46E5",
         });
 
         setCertificateData(localCertificateData);
       } catch (error) {
         console.error("Error generating certificate:", error);
         await Swal.fire({
-          icon: 'error',
-          title: 'Download Failed',
-          text: 'Error generating certificate. Please try again.',
-          confirmButtonColor: '#4F46E5',
+          icon: "error",
+          title: "Download Failed",
+          text: "Error generating certificate. Please try again.",
+          confirmButtonColor: "#4F46E5",
         });
       } finally {
         setGeneratingPDF(false);
       }
     };
 
-    if (!showCertificatePopup || !selectedUser) return null;
+    if (!showCertificatePopup || !selectedUserForCertificate) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -618,7 +755,7 @@ const AdminManageUsers = () => {
 
               <div className="bg-blue-50 p-4 rounded-md">
                 <p className="text-sm text-blue-700">
-                  <strong>Recipient:</strong> {selectedUser.email}
+                  <strong>Recipient:</strong> {selectedUserForCertificate.email}
                 </p>
               </div>
             </div>
@@ -631,14 +768,30 @@ const AdminManageUsers = () => {
               >
                 {generatingPDF ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Generating...
                   </>
                 ) : (
-                  'Download Certificate'
+                  "Download Certificate"
                 )}
               </button>
 
@@ -649,14 +802,30 @@ const AdminManageUsers = () => {
               >
                 {sendingEmail ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Sending...
                   </>
                 ) : (
-                  'Send via Email'
+                  "Send via Email"
                 )}
               </button>
 
@@ -721,120 +890,527 @@ const AdminManageUsers = () => {
                 <tr className="bg-gray-200">
                   <th className="p-3 text-left">Name</th>
                   <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Course %</th>
-                  <th className="p-3 text-left">Quiz %</th>
-                  <th className="p-3 text-left">Assignment %</th>
                   <th className="p-3 text-left">Overall %</th>
                   <th className="p-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user._id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{user.name}</td>
-                    <td className="p-3">{user.email}</td>
-                    <td className="p-3">{user.coursePercentage}%</td>
-                    <td className="p-3">{user.quizPercentage}%</td>
-                    <td className="p-3">{user.assignmentPercentage}%</td>
-                    <td className="p-3 font-semibold text-[#4F46E5]">
-                      {user.overallPercentage}%
-                    </td>
-                    <td className="p-3 flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
-                      <button
-                        onClick={() => handleDelete(user._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                      >
-                        Delete
-                      </button>
+                  <React.Fragment key={user._id}>
+                    <tr className="border-b hover:bg-gray-50">
+                      <td className="p-3">{user.name}</td>
+                      <td className="p-3">{user.email}</td>
+                      <td className="p-3 font-semibold text-[#4F46E5]">
+                        {user.overallPercentage}%
+                      </td>
+                      <td className="p-3 flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
+                        <button
+                          onClick={() => handleViewProgress(user)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                        >
+                          {selectedUserForProgress &&
+                          selectedUserForProgress._id === user._id
+                            ? "Hide Progress"
+                            : "View Progress"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user._id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
 
-                      {user.overallPercentage >= 85 ? (
-                        <button
-                          className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white px-3 py-2 rounded-lg shadow transition"
-                          onClick={() => handleOfferCertificate(user)}
-                        >
-                          Offer Certificate
-                        </button>
-                      ) : (
-                        <button
-                          disabled
-                          className="bg-gray-400 text-white px-3 py-1 rounded cursor-not-allowed"
-                        >
-                          Not Eligible
-                        </button>
+                        {user.overallPercentage >= 85 ? (
+                          <button
+                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white px-3 py-2 rounded-lg shadow transition"
+                            onClick={() => handleOfferCertificate(user)}
+                          >
+                            Offer Certificate
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="bg-gray-400 text-white px-3 py-1 rounded cursor-not-allowed"
+                          >
+                            Not Eligible
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Expanded Progress Row */}
+                    {selectedUserForProgress &&
+                      selectedUserForProgress._id === user._id && (
+                        <tr>
+                          <td colSpan={4} className="bg-[#F9FAFB] p-6">
+                            <ProgressCards user={user} />
+
+                            {/* Detailed Progress Sections */}
+                            <div className="space-y-8">
+                              {/* Course Progress */}
+                              <div>
+                                <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
+                                  📘 Course Progress
+                                </h3>
+                                {selectedUserForProgress.progress.length ===
+                                0 ? (
+                                  <p className="text-gray-500">
+                                    No course progress yet.
+                                  </p>
+                                ) : (
+                                  <div className="space-y-4">
+                                    {selectedUserForProgress.progress.map(
+                                      ({
+                                        courseId,
+                                        courseTitle,
+                                        percentage,
+                                      }) => (
+                                        <div
+                                          key={courseId}
+                                          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+                                        >
+                                          <p className="font-medium text-[#1F2937] text-lg">
+                                            {courseTitle}
+                                          </p>
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            Completion:{" "}
+                                            <span className="font-medium text-[#4F46E5]">
+                                              {percentage}%
+                                            </span>
+                                          </p>
+                                          <div className="w-full bg-gray-200 rounded-full h-3">
+                                            <div
+                                              className="h-3 rounded-full transition-all"
+                                              style={{
+                                                width: `${percentage}%`,
+                                                backgroundColor:
+                                                  percentage >= 80
+                                                    ? "#16a34a"
+                                                    : percentage >= 50
+                                                    ? "#facc15"
+                                                    : "#ef4444",
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Quiz Progress */}
+                              <div>
+                                <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
+                                  📝 Quiz Progress
+                                </h3>
+                                {quizProgressMap.has(
+                                  selectedUserForProgress._id
+                                ) &&
+                                quizProgressMap.get(selectedUserForProgress._id)
+                                  .quizzes.length > 0 ? (
+                                  <div className="space-y-4">
+                                    {quizProgressMap
+                                      .get(selectedUserForProgress._id)
+                                      .quizzes.map((quiz: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+                                        >
+                                          <h4 className="text-lg font-semibold text-[#1F2937]">
+                                            {quiz.quizTitle}
+                                          </h4>
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            Correct:{" "}
+                                            <span className="font-medium text-[#4F46E5]">
+                                              {quiz.correctAnswers}
+                                            </span>{" "}
+                                            / {quiz.totalQuestions} (
+                                            {quiz.scorePercentage}%)
+                                          </p>
+                                          <div className="w-full bg-gray-200 rounded-full h-3">
+                                            <div
+                                              className="h-3 rounded-full"
+                                              style={{
+                                                width: `${quiz.scorePercentage}%`,
+                                                backgroundColor:
+                                                  quiz.scorePercentage >= 80
+                                                    ? "#16a34a"
+                                                    : quiz.scorePercentage >= 50
+                                                    ? "#facc15"
+                                                    : "#ef4444",
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                ) : (
+                                  <p className="italic text-gray-500">
+                                    No quiz progress available.
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Assignment Progress */}
+                              <div>
+                                <h3 className="text-xl font-semibold text-[#4F46E5] mb-4">
+                                  📂 Assignment Progress
+                                </h3>
+
+                                {selectedUserForProgress &&
+                                assignmentProgressMap.has(
+                                  selectedUserForProgress._id
+                                ) &&
+                                assignmentProgressMap.get(
+                                  selectedUserForProgress._id
+                                ).length > 0 ? (
+                                  <div className="space-y-4">
+                                    {assignmentProgressMap
+                                      .get(selectedUserForProgress._id)
+                                      .map((assignment: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+                                        >
+                                          <h4 className="text-lg font-semibold text-[#1F2937]">
+                                            {assignment.title}
+                                          </h4>
+
+                                          {/* Status */}
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            Status:{" "}
+                                            <span className="font-medium">
+                                              {assignment.submitted
+                                                ? "Submitted"
+                                                : "Not Submitted"}
+                                            </span>
+                                          </p>
+
+                                          {/* Score */}
+                                          {assignment.submitted &&
+                                            assignment.score !== null && (
+                                              <p className="text-sm text-gray-600 mb-2">
+                                                Score:{" "}
+                                                <span className="font-medium text-[#4F46E5]">
+                                                  {assignment.score}%
+                                                </span>
+                                              </p>
+                                            )}
+
+                                          {/* Grade Button */}
+                                          {assignment.submitted &&
+                                            assignment.score === null && (
+                                              <button
+                                                onClick={() =>
+                                                  navigate(
+                                                    `/admin/assignments/${assignment.assignmentId}/user/${selectedUserForProgress._id}/grade`
+                                                  )
+                                                }
+                                                className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition"
+                                              >
+                                                Grade
+                                              </button>
+                                            )}
+
+                                          {/* Progress Bar */}
+                                          <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+                                            <div
+                                              className="h-3 rounded-full"
+                                              style={{
+                                                width: assignment.submitted
+                                                  ? assignment.score !== null
+                                                    ? `${assignment.score}%`
+                                                    : "100%"
+                                                  : "0%",
+                                                backgroundColor:
+                                                  assignment.score >= 80
+                                                    ? "#16a34a"
+                                                    : assignment.score >= 50
+                                                    ? "#facc15"
+                                                    : assignment.submitted
+                                                    ? "#3b82f6"
+                                                    : "#ef4444",
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                ) : (
+                                  <p className="italic text-gray-500">
+                                    No assignment progress available.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                  </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Mobile Card View */}
+          {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
             {users.map((user) => (
-              <div
-                key={user._id}
-                className="bg-white shadow rounded-lg p-4 flex flex-col space-y-2"
-              >
-                <div className="flex justify-between items-center">
-                  <h2 className="font-semibold text-lg">{user.name}</h2>
-                  <span className="text-gray-500">{user.email}</span>
-                </div>
+              <div key={user._id} className="bg-white rounded-lg shadow p-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-lg">{user.name}</h3>
+                      <p className="text-gray-600 text-sm">{user.email}</p>
+                    </div>
+                    <span className="bg-[#4F46E5] text-white px-2 py-1 rounded-full text-sm font-semibold">
+                      {user.overallPercentage}%
+                    </span>
+                  </div>
 
-                <div className="flex justify-between">
-                  <span>Course:</span>
-                  <span>{user.coursePercentage}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Quiz:</span>
-                  <span>{user.quizPercentage}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Assignment:</span>
-                  <span>{user.assignmentPercentage}%</span>
-                </div>
-                <div className="flex justify-between font-semibold text-[#4F46E5]">
-                  <span>Overall:</span>
-                  <span>{user.overallPercentage}%</span>
-                </div>
-
-                <div className="flex flex-col space-y-2 mt-2">
-                  <button
-                    onClick={() => handleDelete(user._id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                  >
-                    Delete
-                  </button>
-
-                  {user.overallPercentage >= 85 ? (
+                  <div className="flex flex-col space-y-2 pt-2">
                     <button
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
-                      onClick={() => handleOfferCertificate(user)}
+                      onClick={() => handleViewProgress(user)}
+                      className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition"
                     >
-                      Offer Certificate
+                      {selectedUserForProgress &&
+                      selectedUserForProgress._id === user._id
+                        ? "Hide Progress"
+                        : "View Progress"}
                     </button>
-                  ) : (
                     <button
-                      disabled
-                      className="bg-gray-400 text-white px-3 py-1 rounded cursor-not-allowed"
+                      onClick={() => handleDelete(user._id)}
+                      className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 transition"
                     >
-                      Not Eligible
+                      Delete
                     </button>
-                  )}
+
+                    {user.overallPercentage >= 85 ? (
+                      <button
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white px-3 py-2 rounded-lg shadow transition"
+                        onClick={() => handleOfferCertificate(user)}
+                      >
+                        Offer Certificate
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="bg-gray-400 text-white px-3 py-2 rounded cursor-not-allowed"
+                      >
+                        Not Eligible
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Progress Section for Mobile */}
+                  {selectedUserForProgress &&
+                    selectedUserForProgress._id === user._id && (
+                      <div className="mt-4 pt-4 border-t">
+                        <ProgressCards user={user} />
+
+                        {/* Detailed Progress Sections for Mobile */}
+                        <div className="space-y-6">
+                          {/* Course Progress */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-[#4F46E5] mb-3">
+                              📘 Course Progress
+                            </h3>
+                            {selectedUserForProgress.progress.length === 0 ? (
+                              <p className="text-gray-500">
+                                No course progress yet.
+                              </p>
+                            ) : (
+                              <div className="space-y-3">
+                                {selectedUserForProgress.progress.map(
+                                  ({ courseId, courseTitle, percentage }) => (
+                                    <div
+                                      key={courseId}
+                                      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+                                    >
+                                      <p className="font-medium text-[#1F2937]">
+                                        {courseTitle}
+                                      </p>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Completion:{" "}
+                                        <span className="font-medium text-[#4F46E5]">
+                                          {percentage}%
+                                        </span>
+                                      </p>
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 rounded-full transition-all"
+                                          style={{
+                                            width: `${percentage}%`,
+                                            backgroundColor:
+                                              percentage >= 80
+                                                ? "#16a34a"
+                                                : percentage >= 50
+                                                ? "#facc15"
+                                                : "#ef4444",
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quiz Progress */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-[#4F46E5] mb-3">
+                              📝 Quiz Progress
+                            </h3>
+                            {quizProgressMap.has(selectedUserForProgress._id) &&
+                            quizProgressMap.get(selectedUserForProgress._id)
+                              .quizzes.length > 0 ? (
+                              <div className="space-y-3">
+                                {quizProgressMap
+                                  .get(selectedUserForProgress._id)
+                                  .quizzes.map((quiz: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+                                    >
+                                      <h4 className="font-semibold text-[#1F2937]">
+                                        {quiz.quizTitle}
+                                      </h4>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Correct:{" "}
+                                        <span className="font-medium text-[#4F46E5]">
+                                          {quiz.correctAnswers}
+                                        </span>{" "}
+                                        / {quiz.totalQuestions} (
+                                        {quiz.scorePercentage}%)
+                                      </p>
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 rounded-full"
+                                          style={{
+                                            width: `${quiz.scorePercentage}%`,
+                                            backgroundColor:
+                                              quiz.scorePercentage >= 80
+                                                ? "#16a34a"
+                                                : quiz.scorePercentage >= 50
+                                                ? "#facc15"
+                                                : "#ef4444",
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            ) : (
+                              <p className="italic text-gray-500">
+                                No quiz progress available.
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Assignment Progress */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-[#4F46E5] mb-3">
+                              📂 Assignment Progress
+                            </h3>
+
+                            {selectedUserForProgress &&
+                            assignmentProgressMap.has(
+                              selectedUserForProgress._id
+                            ) &&
+                            assignmentProgressMap.get(
+                              selectedUserForProgress._id
+                            ).length > 0 ? (
+                              <div className="space-y-3">
+                                {assignmentProgressMap
+                                  .get(selectedUserForProgress._id)
+                                  .map((assignment: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+                                    >
+                                      <h4 className="font-semibold text-[#1F2937]">
+                                        {assignment.title}
+                                      </h4>
+
+                                      {/* Status */}
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Status:{" "}
+                                        <span className="font-medium">
+                                          {assignment.submitted
+                                            ? "Submitted"
+                                            : "Not Submitted"}
+                                        </span>
+                                      </p>
+
+                                      {/* Score */}
+                                      {assignment.submitted &&
+                                        assignment.score !== null && (
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            Score:{" "}
+                                            <span className="font-medium text-[#4F46E5]">
+                                              {assignment.score}%
+                                            </span>
+                                          </p>
+                                        )}
+
+                                      {/* Grade Button */}
+                                      {assignment.submitted &&
+                                        assignment.score === null && (
+                                          <button
+                                            onClick={() =>
+                                              navigate(
+                                                `/admin/assignments/${assignment.assignmentId}/user/${selectedUserForProgress._id}/grade`
+                                              )
+                                            }
+                                            className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition"
+                                          >
+                                            Grade
+                                          </button>
+                                        )}
+
+                                      {/* Progress Bar */}
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="h-2 rounded-full"
+                                          style={{
+                                            width: assignment.submitted
+                                              ? assignment.score !== null
+                                                ? `${assignment.score}%`
+                                                : "100%"
+                                              : "0%",
+                                            backgroundColor:
+                                              assignment.score >= 80
+                                                ? "#16a34a"
+                                                : assignment.score >= 50
+                                                ? "#facc15"
+                                                : assignment.submitted
+                                                ? "#3b82f6"
+                                                : "#ef4444",
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            ) : (
+                              <p className="italic text-gray-500">
+                                No assignment progress available.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Footer */}
-          <div className="mt-auto">
-            <AdminFooter />
-          </div>
+          <CertificatePopup />
         </div>
       </div>
-
-      {/* Certificate Popup */}
-      <CertificatePopup />
+      <AdminFooter />
     </div>
   );
 };

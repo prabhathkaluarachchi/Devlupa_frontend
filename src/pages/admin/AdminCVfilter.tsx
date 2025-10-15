@@ -21,7 +21,9 @@ const AdminCVFilter: React.FC = () => {
   const [results, setResults] = useState<CVResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [emailInputs, setEmailInputs] = useState<{ [key: string]: string }>({});
-  const [sendingEmails, setSendingEmails] = useState<{ [key: string]: boolean }>({});
+  const [sendingEmails, setSendingEmails] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [threshold, setThreshold] = useState<number>(45);
   const [sendingBulk, setSendingBulk] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
@@ -51,7 +53,9 @@ const AdminCVFilter: React.FC = () => {
     setEmailInputs({});
     setThreshold(45);
     setScreeningId(null);
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     if (fileInput) fileInput.value = "";
   };
 
@@ -141,10 +145,10 @@ const AdminCVFilter: React.FC = () => {
     setSendingEmails((prev) => ({ ...prev, [fileName]: true }));
 
     try {
-      const res = await API.post("/admin/send-link", { 
-        email, 
-        screeningId, 
-        fileName 
+      const res = await API.post("/admin/send-link", {
+        email,
+        screeningId,
+        fileName,
       });
       Swal.fire({
         icon: "success",
@@ -167,7 +171,7 @@ const AdminCVFilter: React.FC = () => {
 
   // // Helper function to get fileName by email
   // const getFileNameByEmail = (email: string) => {
-  //   const entry = Object.entries(emailInputs).find(([fileName, emailValue]) => 
+  //   const entry = Object.entries(emailInputs).find(([fileName, emailValue]) =>
   //     emailValue === email
   //   );
   //   return entry ? entry[0] : '';
@@ -190,7 +194,7 @@ const AdminCVFilter: React.FC = () => {
     }
 
     // Collect valid emails with file names
-    const emailsToSend: Array<{email: string, fileName: string}> = [];
+    const emailsToSend: Array<{ email: string; fileName: string }> = [];
     const missingEmails: string[] = [];
     const invalidEmails: string[] = [];
 
@@ -259,7 +263,7 @@ const AdminCVFilter: React.FC = () => {
     try {
       const res = await API.post("/admin/send-bulk-links", {
         emails: emailsToSend,
-        screeningId
+        screeningId,
       });
 
       let resultMessage = `Successfully sent ${res.data.sentEmails.length} invitations!`;
@@ -271,12 +275,15 @@ const AdminCVFilter: React.FC = () => {
       }
 
       if (missingEmails.length > 0) {
-        resultMessage += `<br><br>Skipped (no email): ${missingEmails.join(", ")}`;
+        resultMessage += `<br><br>Skipped (no email): ${missingEmails.join(
+          ", "
+        )}`;
       }
 
       Swal.fire({
         icon: res.data.failedEmails.length > 0 ? "warning" : "success",
-        title: res.data.failedEmails.length > 0 ? "Partial Success" : "Success!",
+        title:
+          res.data.failedEmails.length > 0 ? "Partial Success" : "Success!",
         html: resultMessage,
         confirmButtonColor: "#10B981",
       });
@@ -385,8 +392,8 @@ const AdminCVFilter: React.FC = () => {
             <h1 className="text-3xl font-extrabold text-[#4F46E5]">
               Internship Eligibility Checking
             </h1>
-            <a 
-              href="/admin/cv-history" 
+            <a
+              href="/admin/cv-history"
               className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
             >
               View History
@@ -531,7 +538,7 @@ const AdminCVFilter: React.FC = () => {
                       <button
                         onClick={handleSendBulkEmails}
                         disabled={sendingBulk}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
                       >
                         {sendingBulk
                           ? "Sending..."
@@ -540,7 +547,7 @@ const AdminCVFilter: React.FC = () => {
                       <button
                         onClick={handleGenerateReport}
                         disabled={generatingReport}
-                        className="bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
                       >
                         {generatingReport ? "Generating..." : "PDF Report"}
                       </button>
@@ -778,8 +785,8 @@ const CVResultCard: React.FC<{
             onClick={() => onSendEmail(result.fileName)}
             disabled={sendingEmails[result.fileName] || !hasValidEmail}
             className={`bg-gradient-to-r hover:opacity-90 text-white font-semibold px-4 py-2 rounded-xl shadow transition whitespace-nowrap disabled:opacity-50 ${
-              result.eligible 
-                ? "from-green-500 to-emerald-500" 
+              result.eligible
+                ? "from-blue-500 to-cyan-500"
                 : "from-blue-500 to-cyan-500"
             }`}
           >
@@ -798,7 +805,8 @@ const CVResultCard: React.FC<{
         )}
         {!result.eligible && (
           <p className="text-sm text-blue-500 mt-1">
-            Manual override: Sending platform registration link despite eligibility score
+            Manual override: Sending platform registration link despite
+            eligibility score
           </p>
         )}
       </div>

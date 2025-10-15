@@ -35,27 +35,27 @@ const AdminSidebar: React.FC = () => {
       icon: <LayoutDashboard className="w-5 h-5" />,
     },
     {
-      name: "Courses",
+      name: "Manage Courses",
       path: "/admin/courses",
       icon: <BookOpen className="w-5 h-5" />,
     },
     {
-      name: "Quizzes",
+      name: "Manage Quizzes",
       path: "/admin/quizzes",
       icon: <FileQuestion className="w-5 h-5" />,
     },
     {
-      name: "Assignments",
+      name: "Manage Assignments",
       path: "/admin/assignments",
       icon: <ClipboardList className="w-5 h-5" />,
     },
     {
-      name: "Users",
+      name: "Manage Users",
       path: "/admin/users",
       icon: <Users className="w-5 h-5" />,
     },
     {
-      name: "CV Filter",
+      name: "CV Screening",
       path: "/admin/cv-filter",
       icon: <Filter className="w-5 h-5" />,
     },

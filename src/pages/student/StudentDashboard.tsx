@@ -3,8 +3,25 @@ import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
 import StudentFooter from "../../components/StudentFooter";
 import StudentSidebar from "../../components/StudentSidebar";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 
-import { HiBookOpen, HiClipboardList, HiDocumentText } from "react-icons/hi";  
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface CourseProgress {
   courseId: string;
@@ -24,7 +41,7 @@ interface AssignmentProgress {
   assignmentTitle: string;
   submitted: boolean;
   status: "Pending" | "Submitted" | "Graded";
-  score: number | null; // ✅ add score
+  score: number | null;
 }
 
 const StudentDashboard: React.FC = () => {
@@ -38,7 +55,6 @@ const StudentDashboard: React.FC = () => {
   const [assignmentProgress, setAssignmentProgress] = useState<
     AssignmentProgress[]
   >([]);
-
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,18 +88,22 @@ const StudentDashboard: React.FC = () => {
     const fetchProgress = async () => {
       try {
         const courseRes = await axios.get("/users/studentprogress");
+        console.log("Course Progress Response:", courseRes.data); // Debug log
         setProgress(courseRes.data);
-      } catch {
+      } catch (err) {
+        console.error("Course progress error:", err);
         setError("Failed to load course progress");
       }
 
       try {
         const quizRes = await axios.get("/users/studentquizprogress");
+        console.log("Quiz Progress Response:", quizRes.data); // Debug log
         const quizzes = Array.isArray(quizRes.data.quizzes)
           ? quizRes.data.quizzes
           : [];
         setQuizProgress(quizzes);
-      } catch {
+      } catch (err) {
+        console.error("Quiz progress error:", err);
         setQuizError("Failed to load quiz progress");
       }
 
@@ -97,6 +117,74 @@ const StudentDashboard: React.FC = () => {
     if (percentage >= 80) return "#16a34a"; // green
     if (percentage >= 50) return "#facc15"; // yellow
     return "#ef4444"; // red
+  };
+
+  // Calculate statistics
+  const totalCourses = progress.length;
+  const totalQuizzes = quizProgress.length;
+  const totalAssignments = assignmentProgress.length;
+  const averageCourseProgress =
+    progress.length > 0
+      ? Math.round(
+          progress.reduce((sum, course) => sum + course.percentage, 0) /
+            progress.length
+        )
+      : 0;
+  const submittedAssignments = assignmentProgress.filter(
+    (a) => a.status === "Submitted" || a.status === "Graded"
+  ).length;
+
+  // Fixed Chart data for course progress
+  const courseChartData = {
+    labels:
+      progress.length > 0
+        ? progress.map((course) =>
+            course.courseTitle.length > 15
+              ? course.courseTitle.substring(0, 15) + "..."
+              : course.courseTitle
+          )
+        : ["No Courses"],
+    datasets: [
+      {
+        label: "Completion %",
+        data:
+          progress.length > 0
+            ? progress.map((course) => course.percentage)
+            : [0],
+        backgroundColor:
+          progress.length > 0
+            ? progress.map((course) => getColor(course.percentage))
+            : ["#6B7280"],
+        borderColor:
+          progress.length > 0
+            ? progress.map((course) => getColor(course.percentage))
+            : ["#6B7280"],
+        borderWidth: 2,
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          stepSize: 20,
+        },
+      },
+    },
+    maintainAspectRatio: false,
   };
 
   if (loading) {
@@ -132,214 +220,447 @@ const StudentDashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex bg-[#F9FAFB] min-h-screen">
-      {/* Sidebar */}
-      <StudentSidebar />
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 ml-0 md:ml-64 transition-all">
-        <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
-          <h1 className="text-3xl font-bold text-[#4F46E5] mb-6">
-            Welcome, {userName}
+    <div className="flex flex-col min-h-screen">
+      <div className="flex flex-1">
+        <StudentSidebar />
+        <div className="flex-1 flex flex-col md:ml-64 bg-[#F9FAFB] p-4">
+          <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
+            Welcome back, {userName}!
           </h1>
 
-{/* Quick Links */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-  <div
-    className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-    onClick={() => navigate("/courses")}
-  >
-    <h2 className="flex items-center gap-2 text-xl font-semibold text-[#1F2937] mb-2">
-      <HiBookOpen className="text-[#1F2937]" size={24} />
-      My Courses
-    </h2>
-    <p className="text-gray-600">View and continue your enrolled courses.</p>
-  </div>
-
-  <div
-    className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-    onClick={() => navigate("/quizzes")}
-  >
-    <h2 className="flex items-center gap-2 text-xl font-semibold text-[#1F2937] mb-2">
-      <HiClipboardList className="text-[#1F2937]" size={24} />
-      My Quizzes
-    </h2>
-    <p className="text-gray-600">Take or review your quizzes.</p>
-  </div>
-
-  <div
-    className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:bg-[#EEF2FF]"
-    onClick={() => navigate("/assignments")}
-  >
-    <h2 className="flex items-center gap-2 text-xl font-semibold text-[#1F2937] mb-2">
-      <HiDocumentText className="text-[#1F2937]" size={24} />
-      My Assignments
-    </h2>
-    <p className="text-gray-600">Submit and track assignments.</p>
-  </div>
-</div>
-
-          {/* 📘 Course Progress */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
-              📘 Course Progress
-            </h2>
-            {error ? (
-              <p className="text-red-600">{error}</p>
-            ) : progress.length === 0 ? (
-              <p className="text-gray-600">No course progress yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {progress.map(({ courseId, courseTitle, percentage }) => (
-                  <div
-                    key={courseId}
-                    className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
-                    onClick={() => navigate(`/courses/${courseId}`)}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
-                      {courseTitle}
-                    </h3>
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Completion</span>
-                      <span>{percentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div
-                        className="h-3 rounded-full"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor: getColor(percentage),
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-600">
+                    Enrolled Courses
+                  </h2>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {totalCourses}
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-600">
+                    Avg. Progress
+                  </h2>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {averageCourseProgress}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-600">
+                    Total Quizzes
+                  </h2>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {totalQuizzes}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-orange-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-600">
+                    Assignments
+                  </h2>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {submittedAssignments}/{totalAssignments}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* 📝 Quiz Progress */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
-              📝 Quiz Progress
-            </h2>
-            {quizError ? (
-              <p className="text-red-600">{quizError}</p>
-            ) : quizProgress.length === 0 ? (
-              <p className="text-gray-600">No quiz progress available.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {quizProgress.map(
-                  ({ quizId, quizTitle, correctAnswers, totalQuestions }) => {
-                    const completionPercentage =
-                      totalQuestions > 0
-                        ? Math.round((correctAnswers / totalQuestions) * 100)
-                        : 0;
+          {/* Two Column Layout: Course Progress Chart + Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Quick Actions - Gradient Card Style */}
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl shadow-md p-6 border border-blue-100">
+              <div className="flex items-center mb-6">
+                <div className="p-3 bg-white rounded-lg shadow-sm">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Quick Actions
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Jump to your learning areas
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate("/courses")}
+                  className="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center border border-gray-200 hover:border-blue-300 hover:shadow-md"
+                >
+                  <svg
+                    className="w-5 h-5 mr-3 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  Browse Courses
+                </button>
+                <button
+                  onClick={() => navigate("/quizzes")}
+                  className="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center border border-gray-200 hover:border-purple-300 hover:shadow-md"
+                >
+                  <svg
+                    className="w-5 h-5 mr-3 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Take Quizzes
+                </button>
+                <button
+                  onClick={() => navigate("/assignments")}
+                  className="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center border border-gray-200 hover:border-green-300 hover:shadow-md"
+                >
+                  <svg
+                    className="w-5 h-5 mr-3 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  View Assignments
+                </button>
+              </div>
+            </div>
 
-                    return (
-                      <div
-                        key={quizId}
-                        className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
-                        onClick={() => navigate(`/quizzes/${quizId}`)}
-                      >
-                        <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
-                          {quizTitle}
-                        </h3>
-                        <div className="flex justify-between text-sm text-gray-600 mb-1">
-                          <span>Completion</span>
-                          <span>{completionPercentage}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div
-                            className="h-3 rounded-full"
-                            style={{
-                              width: `${completionPercentage}%`,
-                              backgroundColor: getColor(completionPercentage),
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
+            {/* Course Progress Chart */}
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Course Progress Overview
+              </h3>
+              <div className="h-64">
+                {progress.length > 0 ? (
+                  <Bar data={courseChartData} options={chartOptions} />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No course progress data available
+                  </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* 🗂 Assignment Progress */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
-              🗂 Assignment Progress
-            </h2>
-            {assignmentError ? (
-              <p className="text-red-600">{assignmentError}</p>
-            ) : assignmentProgress.length === 0 ? (
-              <p className="text-gray-600">No assignments yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {assignmentProgress.map(
-                  ({ assignmentId, assignmentTitle, status, score }) => (
+          {/* Three Column Progress Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Course Progress */}
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center mb-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Course Progress ({progress.length})
+                  </h3>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {error ? (
+                  <p className="text-red-600 text-center py-4">{error}</p>
+                ) : progress.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">
+                    No courses enrolled yet
+                  </p>
+                ) : (
+                  progress.map(({ courseId, courseTitle, percentage }) => (
                     <div
-                      key={assignmentId}
-                      className="bg-white rounded-xl p-5 shadow hover:shadow-lg cursor-pointer"
-                      onClick={() => navigate(`/assignments/${assignmentId}`)} // ✅ navigate to assignment page
+                      key={courseId}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/courses/${courseId}`)}
                     >
-                      <h3 className="text-lg font-bold text-[#4F46E5] mb-1">
-                        {assignmentTitle}
-                      </h3>
-
-                      <div className="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Status</span>
-                        <span>{status}</span>
-                      </div>
-
-                      {status === "Graded" && score !== null && (
-                        <div className="flex justify-between text-sm text-gray-600 mb-2">
-                          <span>Score</span>
-                          <span>{score}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">
+                          {courseTitle}
+                        </p>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <span>{percentage}% complete</span>
                         </div>
-                      )}
-
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      </div>
+                      <div className="w-20 bg-gray-200 rounded-full h-2 ml-4">
                         <div
-                          className="h-3 rounded-full"
+                          className="h-2 rounded-full"
                           style={{
-                            width:
-                              status === "Graded"
-                                ? "100%"
-                                : status === "Submitted"
-                                ? "50%"
-                                : "0%",
-                            backgroundColor:
-                              status === "Graded"
-                                ? "#16a34a"
-                                : status === "Submitted"
-                                ? "#facc15"
-                                : "#ef4444",
+                            width: `${percentage}%`,
+                            backgroundColor: getColor(percentage),
                           }}
                         />
                       </div>
                     </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Quiz Progress */}
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center mb-4">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Quiz Results ({quizProgress.length})
+                  </h3>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {quizError ? (
+                  <p className="text-red-600 text-center py-4">{quizError}</p>
+                ) : quizProgress.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">
+                    No quizzes taken yet
+                  </p>
+                ) : (
+                  quizProgress.map(
+                    ({ quizId, quizTitle, correctAnswers, totalQuestions }) => {
+                      const percentage =
+                        totalQuestions > 0
+                          ? Math.round((correctAnswers / totalQuestions) * 100)
+                          : 0;
+
+                      return (
+                        <div
+                          key={quizId}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/quizzes/${quizId}`)}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-gray-900 truncate">
+                              {quizTitle}
+                            </p>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <span>
+                                {correctAnswers}/{totalQuestions} correct
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              percentage >= 80
+                                ? "bg-green-100 text-green-800"
+                                : percentage >= 50
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {percentage}%
+                          </div>
+                        </div>
+                      );
+                    }
                   )
                 )}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* 🕓 Recent Activity */}
-          <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">
-              🕓 Recent Activity
-            </h2>
-            <ul className="list-disc pl-5 text-gray-700 space-y-1">
-              <li>Watched “Intro to React” – 2 days ago</li>
-              <li>Submitted Assignment 1 for Web Dev – 3 days ago</li>
-              <li>Scored 8/10 in HTML Quiz – 5 days ago</li>
-            </ul>
+            {/* Assignment Progress */}
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="flex items-center mb-4">
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-orange-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Assignments ({assignmentProgress.length})
+                  </h3>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {assignmentError ? (
+                  <p className="text-red-600 text-center py-4">
+                    {assignmentError}
+                  </p>
+                ) : assignmentProgress.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">
+                    No assignments yet
+                  </p>
+                ) : (
+                  assignmentProgress.map(
+                    ({ assignmentId, assignmentTitle, status, score }) => (
+                      <div
+                        key={assignmentId}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/assignments/${assignmentId}`)}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 truncate">
+                            {assignmentTitle}
+                          </p>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <span>
+                              {status === "Graded" && score !== null
+                                ? `Score: ${score}`
+                                : status}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            status === "Graded"
+                              ? "bg-green-100 text-green-800"
+                              : status === "Submitted"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {status}
+                        </div>
+                      </div>
+                    )
+                  )
+                )}
+              </div>
+            </div>
           </div>
-        </main>
-        <StudentFooter />
+        </div>
       </div>
+      <StudentFooter />
     </div>
   );
 };
