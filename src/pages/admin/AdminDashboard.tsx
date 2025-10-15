@@ -321,7 +321,7 @@ const AdminDashboard: React.FC = () => {
                                   : user
                               );
                             }}
-                            className="bg-[#4F46E5] text-white px-4 py-2 rounded-lg shadow hover:bg-[#4338CA] transition"
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-center text-sm"
                           >
                             {selectedUser && selectedUser._id === user._id
                               ? "Hide Progress"

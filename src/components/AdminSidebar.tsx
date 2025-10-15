@@ -9,6 +9,8 @@ import {
   LogOut,
   Menu,
   X,
+  Filter,
+  History,
 } from "lucide-react";
 import logo from "../assets/logopng-01.png"; // Admin logo
 
@@ -55,14 +57,13 @@ const AdminSidebar: React.FC = () => {
     {
       name: "CV Filter",
       path: "/admin/cv-filter",
-      icon: <Users className="w-5 h-5" />,
+      icon: <Filter className="w-5 h-5" />,
     },
-        {
+    {
       name: "CV History",
       path: "/admin/cv-history",
-      icon: <Users className="w-5 h-5" />,
+      icon: <History className="w-5 h-5" />,
     },
-
   ];
 
   return (

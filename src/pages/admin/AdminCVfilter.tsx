@@ -387,7 +387,7 @@ const AdminCVFilter: React.FC = () => {
             </h1>
             <a 
               href="/admin/cv-history" 
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
             >
               View History
             </a>
