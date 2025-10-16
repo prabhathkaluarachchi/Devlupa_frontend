@@ -88,7 +88,6 @@ const StudentDashboard: React.FC = () => {
     const fetchProgress = async () => {
       try {
         const courseRes = await axios.get("/users/studentprogress");
-        console.log("Course Progress Response:", courseRes.data); // Debug log
         setProgress(courseRes.data);
       } catch (err) {
         console.error("Course progress error:", err);
@@ -97,7 +96,6 @@ const StudentDashboard: React.FC = () => {
 
       try {
         const quizRes = await axios.get("/users/studentquizprogress");
-        console.log("Quiz Progress Response:", quizRes.data); // Debug log
         const quizzes = Array.isArray(quizRes.data.quizzes)
           ? quizRes.data.quizzes
           : [];
@@ -135,6 +133,15 @@ const StudentDashboard: React.FC = () => {
   ).length;
 
   // Fixed Chart data for course progress
+  const getColor2 = (percentage: number) => {
+    if (percentage >= 90) return "#6366F1"; // Indigo-500
+    if (percentage >= 75) return "#3B82F6"; // Blue-500
+    if (percentage >= 50) return "#06B6D4"; // Cyan-500
+    if (percentage >= 25) return "#8B5CF6"; // Purple-500
+    return "#9CA3AF"; // Gray-400 for very low progress
+  };
+
+  // Fixed Chart data for course progress
   const courseChartData = {
     labels:
       progress.length > 0
@@ -153,14 +160,14 @@ const StudentDashboard: React.FC = () => {
             : [0],
         backgroundColor:
           progress.length > 0
-            ? progress.map((course) => getColor(course.percentage))
-            : ["#6B7280"],
+            ? progress.map((course) => getColor2(course.percentage))
+            : ["#9CA3AF"], // Gray
         borderColor:
           progress.length > 0
-            ? progress.map((course) => getColor(course.percentage))
-            : ["#6B7280"],
+            ? progress.map((course) => getColor2(course.percentage))
+            : ["#9CA3AF"],
         borderWidth: 2,
-        borderRadius: 4,
+        borderRadius: 6,
       },
     ],
   };
@@ -224,7 +231,7 @@ const StudentDashboard: React.FC = () => {
       <div className="flex flex-1">
         <StudentSidebar />
         <div className="flex-1 flex flex-col md:ml-64 bg-[#F9FAFB] p-4">
-          <h1 className="text-3xl font-extrabold mb-8 text-[#4F46E5]">
+          <h1 className="text-4xl font-bold mb-8 text-[#4F46E5]">
             Welcome back, {userName}!
           </h1>
 
@@ -277,7 +284,7 @@ const StudentDashboard: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <h2 className="text-sm font-medium text-gray-600">
-                    Avg. Progress
+                    Avg. Course Progress
                   </h2>
                   <p className="text-2xl font-semibold text-gray-900">
                     {averageCourseProgress}%
