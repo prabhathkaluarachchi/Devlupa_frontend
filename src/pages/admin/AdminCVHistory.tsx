@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
 interface ScreeningHistory {
+  manualEmailsSent: number;
   _id: string;
   screeningId: string;
   jobRequirement: string;
@@ -23,6 +24,16 @@ interface CVWithoutEmail {
   matchScore: number;
   eligible: boolean;
   extractedEmail?: string | null;
+  emailSent?: boolean;
+}
+
+interface CVEligibleWithEmail {
+  fileName: string;
+  screeningId: string;
+  matchScore: number;
+  eligible: boolean;
+  extractedEmail: string;
+  emailSent: boolean;
 }
 
 // Separate EmailModal component to prevent re-renders
@@ -31,19 +42,27 @@ const EmailModal: React.FC<{
   onClose: () => void;
   selectedScreening: ScreeningHistory | null;
   cvsWithoutEmail: CVWithoutEmail[];
+  cvsEligibleWithEmail: CVEligibleWithEmail[];
   loadingCVs: boolean;
-  onSendEmail: (fileName: string, email: string) => Promise<void>;
+  onSendEmail: (fileName: string, email: string, isManual?: boolean) => Promise<void>;
   onSendBulkEmails: (
-    emails: Array<{ email: string; fileName: string }>
+    emails: Array<{ email: string; fileName: string; isManual?: boolean }>
   ) => Promise<void>;
+  mode: 'missing' | 'eligible';
+  onRefreshScreening: () => Promise<void>;
+  onUpdateCVs: (mode: 'missing' | 'eligible', fileNames: string[]) => void;
 }> = ({
   show,
   onClose,
   selectedScreening,
   cvsWithoutEmail,
+  cvsEligibleWithEmail,
   loadingCVs,
   onSendEmail,
   onSendBulkEmails,
+  mode,
+  onRefreshScreening,
+  onUpdateCVs,
 }) => {
   const [emailInputs, setEmailInputs] = useState<{ [key: string]: string }>({});
   const [sendingEmails, setSendingEmails] = useState<{
@@ -51,16 +70,23 @@ const EmailModal: React.FC<{
   }>({});
   const [sendingBulk, setSendingBulk] = useState(false);
 
+  // Get the current list of CVs based on mode
+  const currentCVs = mode === 'missing' ? cvsWithoutEmail : cvsEligibleWithEmail;
+
   // Initialize email inputs when modal opens or CVs change
   useEffect(() => {
-    if (show && cvsWithoutEmail.length > 0) {
+    if (show && currentCVs.length > 0) {
       const newEmailInputs: { [key: string]: string } = {};
-      cvsWithoutEmail.forEach((cv) => {
-        newEmailInputs[cv.fileName] = cv.extractedEmail || "";
+      currentCVs.forEach((cv) => {
+        if (mode === 'missing') {
+          newEmailInputs[cv.fileName] = (cv as CVWithoutEmail).extractedEmail || "";
+        } else {
+          newEmailInputs[cv.fileName] = (cv as CVEligibleWithEmail).extractedEmail || "";
+        }
       });
       setEmailInputs(newEmailInputs);
     }
-  }, [show, cvsWithoutEmail]);
+  }, [show, currentCVs, mode]);
 
   const handleEmailChange = (fileName: string, email: string) => {
     setEmailInputs((prev) => ({
@@ -100,7 +126,8 @@ const EmailModal: React.FC<{
     setSendingEmails((prev) => ({ ...prev, [fileName]: true }));
 
     try {
-      await onSendEmail(fileName, email);
+      const isManual = mode === 'missing';
+      await onSendEmail(fileName, email, isManual);
 
       // Remove from local state after successful send
       setEmailInputs((prev) => {
@@ -108,6 +135,12 @@ const EmailModal: React.FC<{
         delete newInputs[fileName];
         return newInputs;
       });
+
+      // Notify parent to remove this CV from the list
+      onUpdateCVs(mode, [fileName]);
+
+      // Refresh screening data after successful send
+      await onRefreshScreening();
     } catch (error) {
       console.error("Send Email Error:", error);
     } finally {
@@ -116,7 +149,7 @@ const EmailModal: React.FC<{
   };
 
   const handleLocalSendBulkEmails = async () => {
-    const validCVs = cvsWithoutEmail.filter((cv) => {
+    const validCVs = currentCVs.filter((cv) => {
       const email = emailInputs[cv.fileName]?.trim();
       return email && isValidEmail(email);
     });
@@ -137,6 +170,7 @@ const EmailModal: React.FC<{
       const emailsToSend = validCVs.map((cv) => ({
         email: emailInputs[cv.fileName].trim(),
         fileName: cv.fileName,
+        isManual: mode === 'missing',
       }));
 
       await onSendBulkEmails(emailsToSend);
@@ -149,6 +183,13 @@ const EmailModal: React.FC<{
         });
         return newInputs;
       });
+
+      // Notify parent to remove these CVs from the list
+      const sentFileNames = validCVs.map(cv => cv.fileName);
+      onUpdateCVs(mode, sentFileNames);
+
+      // Refresh screening data after successful bulk send
+      await onRefreshScreening();
     } catch (error) {
       console.error("Bulk Send Email Error:", error);
     } finally {
@@ -156,12 +197,30 @@ const EmailModal: React.FC<{
     }
   };
 
+  const handleClose = () => {
+    // Refresh screening data when modal closes to ensure latest counts
+    onRefreshScreening();
+    onClose();
+  };
+
   if (!show || !selectedScreening) return null;
 
-  const validCVs = cvsWithoutEmail.filter((cv) => {
+  const validCVs = currentCVs.filter((cv) => {
     const email = emailInputs[cv.fileName]?.trim();
     return email && isValidEmail(email);
   });
+
+  const getModalTitle = () => {
+    return mode === 'missing' 
+      ? "Add Missing Emails" 
+      : "Send Invitations to Eligible Candidates";
+  };
+
+  const getModalDescription = () => {
+    return mode === 'missing'
+      ? "CVs without valid email addresses"
+      : "Eligible CVs with extracted email addresses";
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -169,10 +228,10 @@ const EmailModal: React.FC<{
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800">
-              Add Missing Emails
+              {getModalTitle()}
             </h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-500 hover:text-gray-700 transition-colors"
             >
               <svg
@@ -195,9 +254,14 @@ const EmailModal: React.FC<{
             <span className="font-mono">{selectedScreening.screeningId}</span>
           </p>
           <p className="text-gray-600">
-            CVs without email:{" "}
-            <span className="font-semibold">{cvsWithoutEmail.length}</span>
+            {getModalDescription()}:{" "}
+            <span className="font-semibold">{currentCVs.length}</span>
           </p>
+          {mode === 'eligible' && (
+            <p className="text-sm text-blue-600 mt-1">
+              These CVs have extracted email addresses but invitations weren't sent during initial screening.
+            </p>
+          )}
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[60vh]">
@@ -205,28 +269,34 @@ const EmailModal: React.FC<{
             <div className="flex justify-center items-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
-          ) : cvsWithoutEmail.length === 0 ? (
+          ) : currentCVs.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-green-500 text-6xl mb-4">✅</div>
               <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                All Emails Added!
+                {mode === 'missing' ? 'All Emails Added!' : 'All Invitations Sent!'}
               </h3>
               <p className="text-gray-600">
-                All CVs have email addresses associated with them.
+                {mode === 'missing' 
+                  ? 'All CVs have email addresses associated with them.'
+                  : 'All eligible CVs with email addresses have been sent invitations.'
+                }
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-600">
-                  {validCVs.length} of {cvsWithoutEmail.length} CVs ready to
-                  send
+                  {validCVs.length} of {currentCVs.length} CVs ready to send
                 </span>
                 {validCVs.length > 0 && (
                   <button
                     onClick={handleLocalSendBulkEmails}
                     disabled={sendingBulk}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                    className={`bg-gradient-to-r hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50 ${
+                      mode === 'missing' 
+                        ? 'from-purple-500 to-pink-500' 
+                        : 'from-green-500 to-emerald-500'
+                    }`}
                   >
                     {sendingBulk
                       ? "Sending..."
@@ -235,14 +305,17 @@ const EmailModal: React.FC<{
                 )}
               </div>
 
-              {cvsWithoutEmail.map((cv) => {
+              {currentCVs.map((cv) => {
                 const email = emailInputs[cv.fileName] || "";
                 const isValid = isValidEmail(email);
+                const isAlreadySent = cv.emailSent;
 
                 return (
                   <div
                     key={cv.fileName}
-                    className="bg-gray-50 border rounded-xl p-4"
+                    className={`border rounded-xl p-4 ${
+                      isAlreadySent ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -262,6 +335,16 @@ const EmailModal: React.FC<{
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                             {cv.matchScore}%
                           </span>
+                          {isAlreadySent && (
+                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                              Sent
+                            </span>
+                          )}
+                          {mode === 'eligible' && cv.extractedEmail && (
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                              Extracted
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -274,27 +357,49 @@ const EmailModal: React.FC<{
                           handleEmailChange(cv.fileName, e.target.value)
                         }
                         placeholder="student@example.com"
+                        disabled={isAlreadySent || mode === 'eligible'}
                         className={`flex-1 border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                          email && !isValid
+                          (email && !isValid)
                             ? "border-red-300"
+                            : isAlreadySent
+                            ? "border-green-300 bg-green-50"
+                            : mode === 'eligible'
+                            ? "border-blue-300 bg-blue-50"
                             : "border-gray-300"
-                        }`}
+                        } ${(isAlreadySent || mode === 'eligible') ? 'cursor-not-allowed' : ''}`}
                       />
                       <button
                         onClick={() => handleLocalSendEmail(cv.fileName)}
-                        disabled={sendingEmails[cv.fileName] || !isValid}
+                        disabled={sendingEmails[cv.fileName] || !isValid || isAlreadySent}
                         className={`bg-gradient-to-r hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition whitespace-nowrap disabled:opacity-50 ${
-                          isValid
-                            ? "from-green-500 to-emerald-500"
+                          isValid && !isAlreadySent
+                            ? mode === 'missing'
+                              ? "from-green-500 to-emerald-500"
+                              : "from-blue-500 to-cyan-500"
                             : "from-gray-400 to-gray-500"
                         }`}
                       >
-                        {sendingEmails[cv.fileName] ? "Sending..." : "Send"}
+                        {sendingEmails[cv.fileName] 
+                          ? "Sending..." 
+                          : isAlreadySent 
+                            ? "Sent" 
+                            : "Send"
+                        }
                       </button>
                     </div>
                     {email && !isValid && (
                       <p className="text-red-500 text-sm mt-1">
                         Please enter a valid email address
+                      </p>
+                    )}
+                    {mode === 'eligible' && cv.extractedEmail && (
+                      <p className="text-blue-600 text-sm mt-1">
+                        Email extracted from CV
+                      </p>
+                    )}
+                    {isAlreadySent && (
+                      <p className="text-green-600 text-sm mt-1">
+                        Invitation already sent
                       </p>
                     )}
                   </div>
@@ -307,7 +412,7 @@ const EmailModal: React.FC<{
         <div className="p-4 border-t bg-gray-50">
           <div className="flex justify-end">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-2 rounded-lg shadow transition"
             >
               Close
@@ -323,9 +428,10 @@ const AdminCVHistory: React.FC = () => {
   const [screenings, setScreenings] = useState<ScreeningHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [selectedScreening, setSelectedScreening] =
-    useState<ScreeningHistory | null>(null);
+  const [emailModalMode, setEmailModalMode] = useState<'missing' | 'eligible'>('missing');
+  const [selectedScreening, setSelectedScreening] = useState<ScreeningHistory | null>(null);
   const [cvsWithoutEmail, setCvsWithoutEmail] = useState<CVWithoutEmail[]>([]);
+  const [cvsEligibleWithEmail, setCvsEligibleWithEmail] = useState<CVEligibleWithEmail[]>([]);
   const [loadingCVs, setLoadingCVs] = useState(false);
 
   useEffect(() => {
@@ -352,6 +458,7 @@ const AdminCVHistory: React.FC = () => {
   const handleFindMissingEmails = async (screening: ScreeningHistory) => {
     setLoadingCVs(true);
     setSelectedScreening(screening);
+    setEmailModalMode('missing');
 
     try {
       const res = await API.get(
@@ -372,12 +479,37 @@ const AdminCVHistory: React.FC = () => {
     }
   };
 
-  const handleSendEmail = async (fileName: string, email: string) => {
+  const handleSendToEligibleWithEmail = async (screening: ScreeningHistory) => {
+    setLoadingCVs(true);
+    setSelectedScreening(screening);
+    setEmailModalMode('eligible');
+
+    try {
+      const res = await API.get(
+        `/admin/cvs-eligible-with-email/${screening.screeningId}`
+      );
+      setCvsEligibleWithEmail(res.data.cvs || []);
+      setShowEmailModal(true);
+    } catch (err: any) {
+      console.error("Failed to fetch eligible CVs with email:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "Failed to load eligible CVs with email",
+        confirmButtonColor: "#4F46E5",
+      });
+    } finally {
+      setLoadingCVs(false);
+    }
+  };
+
+  const handleSendEmail = async (fileName: string, email: string, isManual: boolean = false) => {
     try {
       const res = await API.post("/admin/send-link", {
         email,
         screeningId: selectedScreening?.screeningId,
         fileName,
+        isManual,
       });
 
       Swal.fire({
@@ -387,13 +519,7 @@ const AdminCVHistory: React.FC = () => {
         confirmButtonColor: "#10B981",
       });
 
-      // Remove from the list after successful send
-      setCvsWithoutEmail((prev) =>
-        prev.filter((cv) => cv.fileName !== fileName)
-      );
-
-      // Refresh screening history to update invitation count
-      fetchScreeningHistory();
+      return res.data;
     } catch (err: any) {
       console.error("Send Email Error:", err);
       Swal.fire({
@@ -402,12 +528,12 @@ const AdminCVHistory: React.FC = () => {
         text: err.response?.data?.message || "Failed to send email.",
         confirmButtonColor: "#EF4444",
       });
-      throw err; // Re-throw to handle in modal
+      throw err;
     }
   };
 
   const handleSendBulkEmails = async (
-    emailsToSend: Array<{ email: string; fileName: string }>
+    emailsToSend: Array<{ email: string; fileName: string; isManual?: boolean }>
   ) => {
     try {
       const res = await API.post("/admin/send-bulk-links", {
@@ -431,14 +557,7 @@ const AdminCVHistory: React.FC = () => {
         confirmButtonColor: "#10B981",
       });
 
-      // Remove successfully sent CVs from the list
-      const failedFileNames = res.data.failedEmails.map((f: any) => f.fileName);
-      setCvsWithoutEmail((prev) =>
-        prev.filter((cv) => failedFileNames.includes(cv.fileName))
-      );
-
-      // Refresh screening history to update invitation count
-      fetchScreeningHistory();
+      return res.data;
     } catch (err: any) {
       console.error("Bulk Send Email Error:", err);
       Swal.fire({
@@ -447,8 +566,54 @@ const AdminCVHistory: React.FC = () => {
         text: err.response?.data?.message || "Failed to send bulk emails.",
         confirmButtonColor: "#EF4444",
       });
-      throw err; // Re-throw to handle in modal
+      throw err;
     }
+  };
+
+  // Helper function to check if screening has any remaining emails to send - FIXED
+  const hasRemainingEmails = (screening: ScreeningHistory) => {
+    const totalSent = (screening.invitationsSent || 0) + (screening.manualEmailsSent || 0);
+    return screening.eligibleCount - totalSent > 0;
+  };
+
+  // Update the refreshScreeningData function to be more robust:
+  const refreshScreeningData = async () => {
+    try {
+      // Refresh the entire screening list
+      const res = await API.get("/admin/cv-screening-history");
+      setScreenings(res.data);
+      
+      // Also refresh the selected screening if it exists
+      if (selectedScreening) {
+        const updatedScreening = res.data.find(
+          (s: ScreeningHistory) => s.screeningId === selectedScreening.screeningId
+        );
+        if (updatedScreening) {
+          setSelectedScreening(updatedScreening);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refresh screening data:", error);
+    }
+  };
+
+  // Handle updating CV lists when emails are sent
+  const handleUpdateCVs = (mode: 'missing' | 'eligible', fileNames: string[]) => {
+    if (mode === 'missing') {
+      setCvsWithoutEmail(prev => 
+        prev.filter(cv => !fileNames.includes(cv.fileName))
+      );
+    } else {
+      setCvsEligibleWithEmail(prev => 
+        prev.filter(cv => !fileNames.includes(cv.fileName))
+      );
+    }
+  };
+
+  // Calculate remaining emails for display
+  const getRemainingEmails = (screening: ScreeningHistory) => {
+    const totalSent = (screening.invitationsSent || 0) + (screening.manualEmailsSent || 0);
+    return screening.eligibleCount - totalSent;
   };
 
   if (loading) {
@@ -553,14 +718,17 @@ const AdminCVHistory: React.FC = () => {
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">
-                            Missing Emails:
+                            Remaining:
                           </span>
                           <p className="text-gray-800">
-                            <span className="text-orange-600 font-semibold">
-                              {screening.eligibleCount -
-                                screening.invitationsSent}
+                            <span className={`font-semibold ${
+                              hasRemainingEmails(screening) 
+                                ? "text-orange-600" 
+                                : "text-green-600"
+                            }`}>
+                              {getRemainingEmails(screening)}
                             </span>{" "}
-                            Remaining
+                            Not Sent
                           </p>
                         </div>
                       </div>
@@ -572,15 +740,36 @@ const AdminCVHistory: React.FC = () => {
                       >
                         View Details
                       </Link>
-                      {screening.eligibleCount - screening.invitationsSent >
-                        0 && (
+                      
+                      {/* Button for CVs with missing emails - only show if there are remaining emails */}
+                      {hasRemainingEmails(screening) && (
                         <button
                           onClick={() => handleFindMissingEmails(screening)}
                           disabled={loadingCVs}
                           className="bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
                         >
-                          {loadingCVs ? "Loading..." : "Add Emails"}
+                          {loadingCVs ? "Loading..." : "Add Missing Emails"}
                         </button>
+                      )}
+                      
+                      {/* Button for eligible CVs with emails that weren't sent - only show if there are remaining emails */}
+                      {hasRemainingEmails(screening) && (
+                        <button
+                          onClick={() => handleSendToEligibleWithEmail(screening)}
+                          disabled={loadingCVs}
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg shadow transition text-sm disabled:opacity-50"
+                        >
+                          {loadingCVs ? "Loading..." : "Send to Eligible"}
+                        </button>
+                      )}
+
+                      {/* Show completion message when no emails remaining */}
+                      {!hasRemainingEmails(screening) && (
+                        <div className="text-center p-2 bg-green-50 border border-green-200 rounded-lg">
+                          <span className="text-green-600 text-sm font-medium">
+                            ✅ All invitations sent
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -591,12 +780,19 @@ const AdminCVHistory: React.FC = () => {
 
           <EmailModal
             show={showEmailModal}
-            onClose={() => setShowEmailModal(false)}
+            onClose={() => {
+              fetchScreeningHistory(); // Force refresh when modal closes
+              setShowEmailModal(false);
+            }}
             selectedScreening={selectedScreening}
             cvsWithoutEmail={cvsWithoutEmail}
+            cvsEligibleWithEmail={cvsEligibleWithEmail}
             loadingCVs={loadingCVs}
             onSendEmail={handleSendEmail}
             onSendBulkEmails={handleSendBulkEmails}
+            mode={emailModalMode}
+            onRefreshScreening={refreshScreeningData}
+            onUpdateCVs={handleUpdateCVs}
           />
         </main>
         <AdminFooter />
